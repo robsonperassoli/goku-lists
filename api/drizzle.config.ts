@@ -1,7 +1,7 @@
-import { defineConfig } from "drizzle-kit";
+import { defineConfig } from "drizzle-kit"
 
 if (!process.env.DB_FILE_NAME) {
-  throw new Error("DB_FILE_NAME environment variable is not set");
+  throw new Error("DB_FILE_NAME environment variable is not set")
 }
 
 export default defineConfig({
@@ -11,4 +11,4 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DB_FILE_NAME,
   },
-});
+})
