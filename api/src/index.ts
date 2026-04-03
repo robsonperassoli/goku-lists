@@ -1,11 +1,12 @@
 import { cors } from "@elysiajs/cors"
 import { Elysia } from "elysia"
 import { auth } from "./lib/auth"
+import { config } from "./lib/config"
 
 const app = new Elysia()
   .use(
     cors({
-      origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
+      origin: config.server.frontendUrl,
       credentials: true,
     }),
   )
@@ -27,7 +28,7 @@ const app = new Elysia()
   })
   .get("/me", ({ user }) => user, { auth: true })
   .get("/", () => "Hello Elysia")
-  .listen(process.env.PORT ?? 3000)
+  .listen(config.server.port)
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,

@@ -1,14 +1,11 @@
 import { defineConfig } from "drizzle-kit"
-
-if (!process.env.DB_FILE_NAME) {
-  throw new Error("DB_FILE_NAME environment variable is not set")
-}
+import { config } from "./src/lib/config"
 
 export default defineConfig({
   out: "./drizzle",
   schema: "./src/db/schema.ts",
   dialect: "sqlite",
   dbCredentials: {
-    url: process.env.DB_FILE_NAME,
+    url: config.db.fileName,
   },
 })

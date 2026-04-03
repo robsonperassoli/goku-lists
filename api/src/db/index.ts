@@ -1,12 +1,9 @@
 import { Database } from "bun:sqlite"
 import { drizzle } from "drizzle-orm/bun-sqlite"
+import { config } from "../lib/config"
 import * as schema from "./schema"
 
-if (!process.env.DB_FILE_NAME) {
-  throw new Error("DB_FILE_NAME environment variable is not set")
-}
-
 export const db = drizzle({
-  client: new Database(process.env.DB_FILE_NAME),
+  client: new Database(config.db.fileName),
   schema,
 })

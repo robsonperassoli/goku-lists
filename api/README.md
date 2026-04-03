@@ -13,3 +13,8 @@ bun run dev
 ```
 
 Open http://localhost:3000/ with your browser to see the result.
+
+## Open server to web
+```
+ngrok http 3000 --domain factual-worm-mostly.ngrok-free.app
+```
