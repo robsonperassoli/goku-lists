@@ -16,6 +16,7 @@ export const ConfigSchema = Type.Object({
     }),
   }),
   devMode: Type.Boolean(),
+  ngrokDomain: Type.String(),
 });
 
 export type Config = Static<typeof ConfigSchema>;
@@ -35,6 +36,7 @@ const rawConfig = {
     },
   },
   devMode: process.env.DEV_MODE === "true",
+  ngrokDomain: process.env.NGROK_DOMAIN,
 };
 
 if (!Value.Check(ConfigSchema, rawConfig)) {

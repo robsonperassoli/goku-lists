@@ -11,10 +11,11 @@
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "typecheck": "bunx tsc --noEmit --ignoreDeprecations 6.0",
-    "db:generate": "bunx drizzle-kit generate",
-    "db:migrate": "bunx drizzle-kit migrate",
-    "db:push": "bunx drizzle-kit push",
-    "db:studio": "bunx drizzle-kit studio"
+    "db:generate": "bunx --bun drizzle-kit generate",
+    "db:migrate": "bun run src/db/migrate.ts",
+    "db:push": "bunx --bun drizzle-kit push",
+    "db:studio": "bunx --bun drizzle-kit studio",
+    "ngrok": "bun run ngrok.ts"
   },
   "dependencies": {
     "@better-auth/expo": "^1.5.6",
