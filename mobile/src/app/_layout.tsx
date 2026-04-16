@@ -3,11 +3,14 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { useColorScheme } from "react-native";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { authClient } from "@/lib/auth-client";
+
+const queryClient = new QueryClient();
 
 export default function AppLayout() {
   const { isPending, data: session } = authClient.useSession();
@@ -25,14 +28,16 @@ export default function AppLayout() {
     } else if (session && inAuthGroup) {
       router.replace("/(app)");
     }
-  }, [session, isPending, segments, router.replace]);
+  }, [session, isPending, segments, router]);
 
   if (isPending) return null; // or a splash/loader
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <Slot />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <AnimatedSplashOverlay />
+        <Slot />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
