@@ -1,8 +1,8 @@
 import { asc, eq } from "drizzle-orm";
-import { db } from "@/db";
+import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
 import { task, type CreateTaskArgs, type UpdateTaskArgs } from "@/db/schema";
 
-export async function getTasks(listId: string) {
+export function getTasks(db: ExpoSQLiteDatabase, listId: string) {
   return db
     .select()
     .from(task)
@@ -11,11 +11,11 @@ export async function getTasks(listId: string) {
     .all();
 }
 
-export async function getTask(id: string) {
+export function getTask(db: ExpoSQLiteDatabase, id: string) {
   return db.select().from(task).where(eq(task.id, id)).get();
 }
 
-export async function createTask(data: CreateTaskArgs) {
+export async function createTask(db: ExpoSQLiteDatabase, data: CreateTaskArgs) {
   const now = new Date();
   db.insert(task)
     .values({
@@ -26,7 +26,7 @@ export async function createTask(data: CreateTaskArgs) {
     .run();
 }
 
-export async function updateTask(data: UpdateTaskArgs) {
+export async function updateTask(db: ExpoSQLiteDatabase, data: UpdateTaskArgs) {
   db.update(task)
     .set({
       title: data.title,
@@ -40,6 +40,6 @@ export async function updateTask(data: UpdateTaskArgs) {
     .run();
 }
 
-export async function deleteTask(id: string) {
+export async function deleteTask(db: ExpoSQLiteDatabase, id: string) {
   db.delete(task).where(eq(task.id, id)).run();
 }

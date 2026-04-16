@@ -1,16 +1,16 @@
-import { asc, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { list, type CreateListArgs, type UpdateListArgs } from "@/db/schema";
+import { asc, eq } from 'drizzle-orm';
+import type { ExpoSQLiteDatabase } from 'drizzle-orm/expo-sqlite/driver';
+import { list, type CreateListArgs, type UpdateListArgs } from '@/db/schema';
 
-export async function getLists() {
+export function getLists(db: ExpoSQLiteDatabase) {
   return db.select().from(list).orderBy(asc(list.createdAt)).all();
 }
 
-export async function getList(id: string) {
+export function getList(db: ExpoSQLiteDatabase, id: string) {
   return db.select().from(list).where(eq(list.id, id)).get();
 }
 
-export async function createList(data: CreateListArgs) {
+export async function createList(db: ExpoSQLiteDatabase, data: CreateListArgs) {
   const now = new Date();
   db.insert(list)
     .values({
@@ -21,13 +21,13 @@ export async function createList(data: CreateListArgs) {
     .run();
 }
 
-export async function updateList(data: UpdateListArgs) {
+export async function updateList(db: ExpoSQLiteDatabase, data: UpdateListArgs) {
   db.update(list)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(list.id, data.id))
     .run();
 }
 
-export async function deleteList(id: string) {
+export async function deleteList(db: ExpoSQLiteDatabase, id: string) {
   db.delete(list).where(eq(list.id, id)).run();
 }
