@@ -6,7 +6,6 @@ import { ThemedView } from "@/components/themed-view";
 import { HomeHeader } from "@/components/home-header";
 import { useLists } from "@/hooks/lists";
 import { BottomTabInset } from "@/constants/theme";
-import type { List } from "@/db/schema";
 import { CreateListSheet } from "@/components/create-list-sheet";
 import { useRef } from "react";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -17,18 +16,6 @@ export default function HomeScreen() {
   useBottomSheetBackHandler(createTaskSheetRef);
 
   const { data: lists } = useLists();
-
-  const renderItem = ({ item }: { item: List }) => (
-    <ListCard id={item.id} name={item.name} description={item.description} />
-  );
-
-  const renderEmpty = () => (
-    <EmptyState
-      message="No lists yet"
-      actionLabel="Create List"
-      onAction={() => console.log("quak")}
-    />
-  );
 
   return (
     <ThemedView style={styles.container}>
@@ -42,8 +29,20 @@ export default function HomeScreen() {
         <FlatList
           data={lists}
           keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          ListEmptyComponent={renderEmpty}
+          renderItem={({ item }) => (
+            <ListCard
+              id={item.id}
+              name={item.name}
+              description={item.description}
+            />
+          )}
+          ListEmptyComponent={() => (
+            <EmptyState
+              message="No lists yet"
+              actionLabel="Create List"
+              onAction={() => console.log("quak")}
+            />
+          )}
           contentContainerStyle={styles.listContent}
         />
       </SafeAreaView>

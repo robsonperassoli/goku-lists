@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { ThemedText } from './themed-text';
-import { Spacing } from '@/constants/theme';
+import { ThemedText } from "./themed-text";
+import { Spacing } from "@/constants/theme";
+import { useRouter } from "expo-router";
 
 type ListCardProps = {
   id: string;
@@ -9,11 +10,14 @@ type ListCardProps = {
   description?: string | null;
 };
 
-export function ListCard({ name, description }: ListCardProps) {
+export function ListCard({ id, name, description }: ListCardProps) {
+  const router = useRouter();
   return (
     <Pressable
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
-      onPress={() => console.log('Navigate to list:', name)}
+      onPress={() =>
+        router.navigate({ pathname: "/(app)/[id]", params: { id } })
+      }
     >
       <View style={styles.content}>
         <ThemedText type="default">{name}</ThemedText>
