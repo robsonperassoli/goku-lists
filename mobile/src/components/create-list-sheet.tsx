@@ -4,7 +4,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { StyleSheet } from "react-native";
-import { Ref, useCallback } from "react";
+import { RefObject } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +15,7 @@ import { useCreateListForm } from "@/hooks/use-create-list-form";
 import { useTheme } from "@/hooks/use-theme";
 
 interface CreateListSheetProps {
-  ref: Ref<BottomSheetModal>;
+  ref: RefObject<BottomSheetModal | null>;
   onClose: () => void;
 }
 

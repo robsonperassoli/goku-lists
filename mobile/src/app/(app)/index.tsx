@@ -10,9 +10,12 @@ import type { List } from "@/db/schema";
 import { CreateListSheet } from "@/components/create-list-sheet";
 import { useRef } from "react";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
+import useBottomSheetBackHandler from "@/hooks/use-bottom-sheet-back-handler";
 
 export default function HomeScreen() {
   const createTaskSheetRef = useRef<BottomSheetModal>(null);
+  useBottomSheetBackHandler(createTaskSheetRef);
+
   const { data: lists } = useLists();
 
   const renderItem = ({ item }: { item: List }) => (
