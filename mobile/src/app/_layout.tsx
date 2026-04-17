@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { useColorScheme } from "react-native";
 import { SQLiteProvider } from "expo-sqlite";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { authClient } from "@/lib/auth-client";
@@ -35,13 +36,15 @@ export default function AppLayout() {
   if (isPending) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <SQLiteProvider databaseName="goku-lists.db" onInit={migrateDatabase}>
-          <AnimatedSplashOverlay />
-          <Slot />
-        </SQLiteProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+          <SQLiteProvider databaseName="goku-lists.db" onInit={migrateDatabase}>
+            <AnimatedSplashOverlay />
+            <Slot />
+          </SQLiteProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

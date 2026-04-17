@@ -1,19 +1,19 @@
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ListCard } from "@/components/list-card";
 import { EmptyState } from "@/components/empty-state";
-import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { HomeHeader } from "@/components/home-header";
 import { useLists } from "@/hooks/lists";
-import { authClient } from "@/lib/auth-client";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { BottomTabInset } from "@/constants/theme";
 import type { List } from "@/db/schema";
+import { CreateListSheet } from "@/components/create-list-sheet";
+import { useRef } from "react";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 export default function HomeScreen() {
+  const createTaskSheetRef = useRef<BottomSheetModal>(null);
   const { data: lists } = useLists();
-  const { data: session } = authClient.useSession();
-
-  const userName = session?.user?.name ?? session?.user?.email ?? "User";
 
   const renderItem = ({ item }: { item: List }) => (
     <ListCard id={item.id} name={item.name} description={item.description} />
@@ -23,16 +23,18 @@ export default function HomeScreen() {
     <EmptyState
       message="No lists yet"
       actionLabel="Create List"
-      onAction={() => console.log("Create list")}
+      onAction={() => console.log("quak")}
     />
   );
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <ThemedText type="title">Welcome {userName}</ThemedText>
-        </View>
+        <HomeHeader
+          onAddPress={() => {
+            createTaskSheetRef.current?.present();
+          }}
+        />
 
         <FlatList
           data={lists}
@@ -42,6 +44,11 @@ export default function HomeScreen() {
           contentContainerStyle={styles.listContent}
         />
       </SafeAreaView>
+
+      <CreateListSheet
+        ref={createTaskSheetRef}
+        onClose={() => createTaskSheetRef.current?.close()}
+      />
     </ThemedView>
   );
 }
@@ -52,10 +59,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
   },
   listContent: {
     flexGrow: 1,

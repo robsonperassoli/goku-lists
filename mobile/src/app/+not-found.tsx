@@ -1,5 +1,5 @@
-import { View } from "react-native";
+import { Text } from "react-native";
 
 export default function NotFound() {
-  return <View>Not found</View>;
+  return <Text style={{ padding: 40 }}>Not found</Text>;
 }
