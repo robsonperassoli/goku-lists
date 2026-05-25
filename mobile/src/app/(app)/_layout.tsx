@@ -1,6 +1,5 @@
 import React from "react";
-
-import { Slot, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useTheme } from "@/hooks/use-theme";
