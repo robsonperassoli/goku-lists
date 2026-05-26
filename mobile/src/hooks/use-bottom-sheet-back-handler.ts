@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { BackHandler } from "react-native";
 import type BottomSheet from "@gorhom/bottom-sheet";
 
-function useBottomSheetBackHandler(ref: React.RefObject<BottomSheet | null>) {
+function useBottomSheetBackHandler(
+  ...refs: React.RefObject<BottomSheet | null>[]
+) {
   useEffect(() => {
     const onBackPress = () => {
-      ref.current?.close();
+      refs.forEach((ref) => ref.current?.close());
       return true;
     };
 
@@ -15,7 +17,7 @@ function useBottomSheetBackHandler(ref: React.RefObject<BottomSheet | null>) {
     );
 
     return () => subscription.remove();
-  }, [ref]);
+  }, [refs]);
 }
 
 export default useBottomSheetBackHandler;

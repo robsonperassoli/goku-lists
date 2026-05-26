@@ -1,17 +1,12 @@
-import React, { useState } from "react";
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
+import { useState, type RefObject } from "react";
 import { StyleSheet } from "react-native";
-import { RefObject } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import type { BottomSheetModal } from "@gorhom/bottom-sheet";
+
 import { Input } from "@/components/ui/input";
 import { ThemedText } from "@/components/themed-text";
 import { Button } from "@/components/ui/button";
+import { AppSheet } from "@/components/ui/app-sheet";
 import { Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
 
 interface CreateTaskSheetProps {
   ref: RefObject<BottomSheetModal | null>;
@@ -20,8 +15,11 @@ interface CreateTaskSheetProps {
   isLoading?: boolean;
 }
 
-export function CreateTaskSheet({ ref, onClose, onSubmit, isLoading }: CreateTaskSheetProps) {
-  const theme = useTheme();
+export function CreateTaskSheet({
+  ref,
+  onSubmit,
+  isLoading,
+}: CreateTaskSheetProps) {
   const [title, setTitle] = useState("");
 
   const handleSubmit = () => {
@@ -32,49 +30,33 @@ export function CreateTaskSheet({ ref, onClose, onSubmit, isLoading }: CreateTas
   };
 
   return (
-    <BottomSheetModal
+    <AppSheet
+      ref={ref}
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
-      ref={ref}
-      backdropComponent={(props) => (
-        <BottomSheetBackdrop
-          {...props}
-          opacity={0.7}
-          appearsOnIndex={0}
-          disappearsOnIndex={-1}
-        />
-      )}
-      backgroundStyle={{
-        backgroundColor: theme.surfaceHigh,
-      }}
-      handleIndicatorStyle={{ backgroundColor: theme.backgroundSelected }}
+      contentStyle={styles.form}
     >
-      <BottomSheetView>
-        <SafeAreaView style={styles.form}>
-          <ThemedText type="title" style={styles.title}>
-            Add Item
-          </ThemedText>
+      <ThemedText type="title" style={styles.title}>
+        Add Item
+      </ThemedText>
 
-          <Input
-            placeholder="Item name"
-            value={title}
-            onChangeText={setTitle}
-            autoFocus
-            onSubmitEditing={handleSubmit}
-          />
+      <Input
+        placeholder="Item name"
+        value={title}
+        onChangeText={setTitle}
+        autoFocus
+        onSubmitEditing={handleSubmit}
+      />
 
-          <Button onPress={handleSubmit} disabled={!title.trim() || isLoading}>
-            {isLoading ? "Adding..." : "Add Item"}
-          </Button>
-        </SafeAreaView>
-      </BottomSheetView>
-    </BottomSheetModal>
+      <Button onPress={handleSubmit} disabled={!title.trim() || isLoading}>
+        {isLoading ? "Adding..." : "Add Item"}
+      </Button>
+    </AppSheet>
   );
 }
 
 const styles = StyleSheet.create({
   form: {
-    padding: Spacing.four,
     gap: Spacing.three,
   },
   title: {

@@ -8,9 +8,11 @@ import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { TaskItem } from "@/components/task-item";
 import { CreateTaskSheet } from "@/components/create-task-sheet";
+import { ListOptionsSheet } from "@/components/list-options-sheet";
+import { EditableListTitle } from "@/components/editable-list-title";
 import { EmptyState } from "@/components/empty-state";
 import { useTasks, useCreateTask, useUpdateTask } from "@/hooks/tasks";
-import { useList } from "@/hooks/lists";
+import { useList, useDeleteList } from "@/hooks/lists";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import useBottomSheetBackHandler from "@/hooks/use-bottom-sheet-back-handler";
@@ -23,12 +25,14 @@ export default function ListItems() {
   const theme = useTheme();
 
   const createTaskSheetRef = useRef<BottomSheetModal>(null);
-  useBottomSheetBackHandler(createTaskSheetRef);
+  const listOptionsSheetRef = useRef<BottomSheetModal>(null);
+  useBottomSheetBackHandler(createTaskSheetRef, listOptionsSheetRef);
 
   const { data: list } = useList(id);
   const { data: tasks } = useTasks(id);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
+  const deleteList = useDeleteList();
 
   const [showCompleted, setShowCompleted] = useState(false);
 
@@ -62,11 +66,26 @@ export default function ListItems() {
     );
   };
 
+  const handleDeleteList = () => {
+    if (!list) return;
+
+    deleteList.mutate(list.id, {
+      onSuccess: () => {
+        listOptionsSheetRef.current?.close();
+        router.back();
+      },
+    });
+  };
+
+  const openListOptions = () => listOptionsSheetRef.current?.present();
+
+  const openCreateTaskSheet = () => createTaskSheetRef.current?.present();
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={() => router.back()} style={styles.iconButton}>
             <SymbolView
               tintColor={theme.text}
               name={{
@@ -78,22 +97,17 @@ export default function ListItems() {
             />
           </Pressable>
 
-          <ThemedText type="subtitle" style={styles.title}>
-            {list?.name.toUpperCase()}
-          </ThemedText>
+          <EditableListTitle list={list} />
 
-          <Pressable
-            style={[styles.addButton, { backgroundColor: theme.text }]}
-            onPress={() => createTaskSheetRef.current?.present()}
-          >
+          <Pressable onPress={openListOptions} style={styles.iconButton}>
             <SymbolView
-              tintColor={theme.background}
+              tintColor={theme.text}
               name={{
-                ios: "plus",
-                android: "add",
-                web: "add",
+                ios: "ellipsis",
+                android: "more_horiz",
+                web: "more_horiz",
               }}
-              size={12}
+              size={24}
             />
           </Pressable>
         </View>
@@ -105,11 +119,29 @@ export default function ListItems() {
             <TaskItem task={item} onToggle={handleToggleTask} />
           )}
           ListEmptyComponent={() => (
-            <EmptyState
-              message="No items yet"
-              actionLabel="Add Item"
-              onAction={() => createTaskSheetRef.current?.present()}
-            />
+            <EmptyState message="No items yet" />
+          )}
+          ListFooterComponent={() => (
+            <Pressable
+              style={({ pressed }) => [
+                styles.addItemRow,
+                pressed && styles.pressed,
+              ]}
+              onPress={openCreateTaskSheet}
+            >
+              <SymbolView
+                tintColor={theme.textSecondary}
+                name={{
+                  ios: "plus",
+                  android: "add",
+                  web: "add",
+                }}
+                size={20}
+              />
+              <ThemedText type="default" themeColor="textSecondary">
+                Add item
+              </ThemedText>
+            </Pressable>
           )}
           contentContainerStyle={styles.listContent}
         />
@@ -142,6 +174,13 @@ export default function ListItems() {
         onSubmit={handleCreateTask}
         isLoading={createTask.isPending}
       />
+
+      <ListOptionsSheet
+        ref={listOptionsSheetRef}
+        listName={list?.name ?? ""}
+        onDelete={handleDeleteList}
+        isDeleting={deleteList.isPending}
+      />
     </ThemedView>
   );
 }
@@ -158,25 +197,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
-    gap: Spacing.three,
+    gap: Spacing.two,
   },
-  backButton: {
+  iconButton: {
     padding: Spacing.one,
   },
-  title: {
-    flex: 1,
-    fontWeight: "bold",
-  },
-  addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
+  pressed: {
+    opacity: 0.7,
   },
   listContent: {
     flexGrow: 1,
     paddingBottom: Spacing.three,
+  },
+  addItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
   },
   completedHeader: {
     paddingHorizontal: Spacing.four,
