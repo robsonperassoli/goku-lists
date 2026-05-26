@@ -41,8 +41,8 @@ export async function updateTask(db: ExpoSQLiteDatabase, data: UpdateTaskArgs) {
       .set({
         title: data.title,
         notes: data.notes,
-        completedAt: data.completedAt ?? undefined,
-        dueDate: data.dueDate ?? undefined,
+        ...(data.completedAt !== undefined && { completedAt: data.completedAt }),
+        ...(data.dueDate !== undefined && { dueDate: data.dueDate }),
         position: data.position,
         updatedAt: now,
       })

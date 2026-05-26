@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { ThemedText } from "./themed-text";
+import { EditableTaskTitle } from "./editable-task-title";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
+
 interface TaskItemProps {
   task: {
     id: string;
@@ -18,39 +19,32 @@ export function TaskItem({ task, onToggle }: TaskItemProps) {
   const theme = useTheme();
   const isCompleted = !!task.completedAt;
 
-  const handlePress = () => {
-    onToggle(task);
-  };
-
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.container,
-        pressed && styles.pressed,
-      ]}
-      onPress={handlePress}
-    >
-      <View
-        style={[
-          styles.checkbox,
-          { borderColor: theme.textSecondary },
-          isCompleted && { backgroundColor: theme.text, borderColor: theme.text },
+    <View style={styles.container}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.checkboxButton,
+          pressed && styles.pressed,
         ]}
+        onPress={() => onToggle(task)}
+        hitSlop={8}
       >
-        {isCompleted && (
-          <View style={styles.checkmark} />
-        )}
-      </View>
-      <ThemedText
-        type="default"
-        style={[
-          styles.title,
-          isCompleted && { textDecorationLine: "line-through", color: theme.textSecondary },
-        ]}
-      >
-        {task.title}
-      </ThemedText>
-    </Pressable>
+        <View
+          style={[
+            styles.checkbox,
+            { borderColor: theme.textSecondary },
+            isCompleted && {
+              backgroundColor: theme.text,
+              borderColor: theme.text,
+            },
+          ]}
+        >
+          {isCompleted && <View style={styles.checkmark} />}
+        </View>
+      </Pressable>
+
+      <EditableTaskTitle task={task} isCompleted={isCompleted} />
+    </View>
   );
 }
 
@@ -61,6 +55,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
+  },
+  checkboxButton: {
+    padding: Spacing.one,
   },
   pressed: {
     opacity: 0.7,
@@ -81,8 +78,5 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
     transform: [{ rotate: "-45deg" }],
     marginTop: -2,
-  },
-  title: {
-    flex: 1,
   },
 });
