@@ -1,4 +1,10 @@
-import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  integer,
+  real,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export type List = {
   id: string;
@@ -7,6 +13,7 @@ export type List = {
   image: string | null;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 };
 
 export type CreateListArgs = {
@@ -28,6 +35,7 @@ export type Task = {
   position: number;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 };
 
 export type CreateTaskArgs = {
@@ -55,6 +63,7 @@ export const list = sqliteTable("list", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .$onUpdate(() => new Date())
     .notNull(),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 });
 
 export const task = sqliteTable("task", {
@@ -71,4 +80,26 @@ export const task = sqliteTable("task", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .$onUpdate(() => new Date())
     .notNull(),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 });
+
+export type SyncOperation = "create" | "update" | "delete";
+
+export const syncQueue = sqliteTable(
+  "sync_queue",
+  {
+    id: text().primaryKey(),
+    tableName: text("table_name").notNull(),
+    recordId: text("record_id").notNull(),
+    operation: text().notNull().$type<SyncOperation>(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    attemptedAt: integer("attempted_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [
+    uniqueIndex("sync_queue_table_record_idx").on(
+      table.tableName,
+      table.recordId,
+    ),
+  ],
+);

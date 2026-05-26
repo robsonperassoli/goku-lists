@@ -8,6 +8,13 @@
       "when": 1776349484512,
       "tag": "0000_military_white_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1779739237138,
+      "tag": "0001_yummy_thunderbolts",
+      "breakpoints": true
     }
   ]
 }
