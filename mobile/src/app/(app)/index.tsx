@@ -5,15 +5,15 @@ import { EmptyState } from "@/components/empty-state";
 import { ThemedView } from "@/components/themed-view";
 import { HomeHeader } from "@/components/home-header";
 import { useLists } from "@/hooks/lists";
-import { BottomTabInset } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 import { CreateListSheet } from "@/components/create-list-sheet";
 import { useRef } from "react";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import useBottomSheetBackHandler from "@/hooks/use-bottom-sheet-back-handler";
 
 export default function HomeScreen() {
-  const createTaskSheetRef = useRef<BottomSheetModal>(null);
-  useBottomSheetBackHandler(createTaskSheetRef);
+  const createListSheetRef = useRef<BottomSheetModal>(null);
+  useBottomSheetBackHandler(createListSheetRef);
 
   const { data: lists } = useLists();
 
@@ -22,7 +22,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <HomeHeader
           onAddPress={() => {
-            createTaskSheetRef.current?.present();
+            createListSheetRef.current?.present();
           }}
         />
 
@@ -40,7 +40,7 @@ export default function HomeScreen() {
             <EmptyState
               message="No lists yet"
               actionLabel="Create List"
-              onAction={() => console.log("quak")}
+              onAction={() => createListSheetRef.current?.present()}
             />
           )}
           contentContainerStyle={styles.listContent}
@@ -48,8 +48,8 @@ export default function HomeScreen() {
       </SafeAreaView>
 
       <CreateListSheet
-        ref={createTaskSheetRef}
-        onClose={() => createTaskSheetRef.current?.close()}
+        ref={createListSheetRef}
+        onClose={() => createListSheetRef.current?.close()}
       />
     </ThemedView>
   );
@@ -64,6 +64,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    paddingBottom: BottomTabInset,
+    paddingBottom: Spacing.four,
   },
 });
