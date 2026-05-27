@@ -15,6 +15,13 @@
       "when": 1775754481629,
       "tag": "0001_tense_masked_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775755000000,
+      "tag": "0002_sync_deleted_at",
+      "breakpoints": true
     }
   ]
 }

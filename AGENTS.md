@@ -46,5 +46,5 @@ Drop explore tab, unused starter components and assets, and simplify splash bran
 Package-specific rules live in each subfolder when needed:
 
 - **mobile/** — [mobile/AGENTS.md](mobile/AGENTS.md) (Bun, lint, sync queue)
-- **api/** — Bun/Elysia; run commands from `api/` with `bun`
+- **api/** — Bun/Elysia; run commands from `api/` with `bun`. Use Temporal (`@js-temporal/polyfill`, helpers in `lib/dates.ts`) for date/time logic—not plain `Date`.
 

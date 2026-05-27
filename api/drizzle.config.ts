@@ -1,7 +1,7 @@
-import { defineConfig } from "drizzle-kit";
-import { config } from "./src/lib/config";
+import { defineConfig } from "drizzle-kit"
+import { config } from "./src/lib/config"
 
-export const migrationsFolder = "./drizzle";
+export const migrationsFolder = "./drizzle"
 
 export default defineConfig({
   out: migrationsFolder,
@@ -10,4 +10,4 @@ export default defineConfig({
   dbCredentials: {
     url: config.db.fileName,
   },
-});
+})

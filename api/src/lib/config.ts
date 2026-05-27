@@ -1,5 +1,5 @@
-import { type Static, Type } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
+import { type Static, Type } from "@sinclair/typebox"
+import { Value } from "@sinclair/typebox/value"
 
 export const ConfigSchema = Type.Object({
   server: Type.Object({
@@ -17,9 +17,9 @@ export const ConfigSchema = Type.Object({
   }),
   devMode: Type.Boolean(),
   ngrokDomain: Type.String(),
-});
+})
 
-export type Config = Static<typeof ConfigSchema>;
+export type Config = Static<typeof ConfigSchema>
 
 const rawConfig = {
   server: {
@@ -37,14 +37,14 @@ const rawConfig = {
   },
   devMode: process.env.DEV_MODE === "true",
   ngrokDomain: process.env.NGROK_DOMAIN,
-};
+}
 
 if (!Value.Check(ConfigSchema, rawConfig)) {
   const details = [...Value.Errors(ConfigSchema, rawConfig)]
     .map(({ path, message }) => `${path || "/"}: ${message}`)
-    .join("\n");
+    .join("\n")
 
-  throw new Error(`Invalid environment configuration:\n${details}`);
+  throw new Error(`Invalid environment configuration:\n${details}`)
 }
 
-export const config: Config = rawConfig;
+export const config: Config = rawConfig

@@ -1,7 +1,7 @@
-import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { user } from "./auth-schema";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core"
+import { user } from "./auth-schema"
 
-export * from "./auth-schema";
+export * from "./auth-schema"
 
 export const list = sqliteTable("list", {
   id: text("id").primaryKey(),
@@ -15,7 +15,8 @@ export const list = sqliteTable("list", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .$onUpdate(() => new Date())
     .notNull(),
-});
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+})
 
 export const task = sqliteTable("task", {
   id: text("id").primaryKey(),
@@ -34,4 +35,5 @@ export const task = sqliteTable("task", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .$onUpdate(() => new Date())
     .notNull(),
-});
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+})

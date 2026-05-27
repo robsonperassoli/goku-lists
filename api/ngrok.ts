@@ -1,4 +1,4 @@
-import { config } from "./src/lib/config";
+import { config } from "./src/lib/config"
 
 const proc = Bun.spawn(
   ["ngrok", "http", `${config.server.port}`, "--domain", config.ngrokDomain],
@@ -6,7 +6,7 @@ const proc = Bun.spawn(
     stdout: "inherit",
     stderr: "inherit",
   },
-);
+)
 
-await proc.exited;
-console.log("ngrok exited with code:", proc.exitCode);
+await proc.exited
+console.log("ngrok exited with code:", proc.exitCode)

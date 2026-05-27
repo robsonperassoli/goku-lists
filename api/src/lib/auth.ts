@@ -1,9 +1,9 @@
-import { expo } from "@better-auth/expo";
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { config } from "./config";
+import { expo } from "@better-auth/expo"
+import { betterAuth } from "better-auth"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { db } from "../db"
+import * as schema from "../db/schema"
+import { config } from "./config"
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
@@ -28,4 +28,4 @@ export const auth = betterAuth({
         ]
       : []),
   ],
-});
+})
