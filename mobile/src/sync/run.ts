@@ -31,7 +31,7 @@ export async function runOnce(): Promise<void> {
 
   try {
     const pushResult = await pushChanges(deps.db);
-    if (pushResult === "transport_failed") {
+    if (pushResult.status === "transport_failed") {
       return;
     }
 

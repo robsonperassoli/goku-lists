@@ -77,12 +77,15 @@ function handleRejectedChange(
   });
 }
 
-export type PushResult = "empty" | "ok" | "transport_failed";
+export type PushResult =
+  | { status: "empty" }
+  | { status: "ok"; acceptedCount: number }
+  | { status: "transport_failed" };
 
 export async function pushChanges(db: ExpoSQLiteDatabase): Promise<PushResult> {
   const rows = getQueueRows(db);
   if (rows.length === 0) {
-    return "empty";
+    return { status: "empty" };
   }
 
   const changes = rows
@@ -90,7 +93,7 @@ export async function pushChanges(db: ExpoSQLiteDatabase): Promise<PushResult> {
     .filter((change): change is NonNullable<typeof change> => change != null);
 
   if (changes.length === 0) {
-    return "empty";
+    return { status: "empty" };
   }
 
   let body: PushResponse;
@@ -106,7 +109,7 @@ export async function pushChanges(db: ExpoSQLiteDatabase): Promise<PushResult> {
       db,
       rows.map((row) => row.id),
     );
-    return "transport_failed";
+    return { status: "transport_failed" };
   }
 
   if (body.accepted.length > 0) {
@@ -127,5 +130,5 @@ export async function pushChanges(db: ExpoSQLiteDatabase): Promise<PushResult> {
     );
   }
 
-  return "ok";
+  return { status: "ok", acceptedCount: body.accepted.length };
 }

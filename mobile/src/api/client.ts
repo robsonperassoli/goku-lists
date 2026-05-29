@@ -16,10 +16,6 @@ export class ApiTransportError extends Error {
 }
 
 function getAuthCookie(): string | null {
-  if (!("getCookie" in authClient)) {
-    return null;
-  }
-
   const cookie = authClient.getCookie();
   return cookie || null;
 }
