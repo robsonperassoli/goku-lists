@@ -1,5 +1,16 @@
 import { Temporal } from "@js-temporal/polyfill"
 
+export function nowIsoTimestamp(): string {
+  return Temporal.Now.instant().toString()
+}
+
+export function nowDevTime(): string {
+  return Temporal.Now.instant()
+    .toZonedDateTimeISO(Temporal.Now.timeZoneId())
+    .toPlainTime()
+    .toString({ smallestUnit: "millisecond" })
+}
+
 function instantFromMs(ms: number): Temporal.Instant {
   return Temporal.Instant.fromEpochMilliseconds(ms)
 }
