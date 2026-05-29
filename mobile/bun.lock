@@ -6,7 +6,7 @@
       "name": "mobile",
       "dependencies": {
         "@better-auth/expo": "^1.5.6",
-        "@gorhom/bottom-sheet": "^5",
+        "@gorhom/bottom-sheet": "^5.2.9",
         "@react-navigation/bottom-tabs": "^7.15.5",
         "@react-navigation/drawer": "^7.9.8",
         "@react-navigation/elements": "^2.9.10",

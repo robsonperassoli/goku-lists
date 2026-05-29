@@ -1,17 +1,37 @@
 import * as Crypto from "expo-crypto";
 import { and, eq } from "drizzle-orm";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
-
-type SyncTransaction = Parameters<
-  Parameters<ExpoSQLiteDatabase["transaction"]>[0]
->[0];
 import { syncQueue, type SyncOperation } from "./schema";
 import { syncableTables, type SyncableTableName } from "./syncable-tables";
+
+export type SyncTransaction = Parameters<
+  Parameters<ExpoSQLiteDatabase["transaction"]>[0]
+>[0];
 
 type CollapseResult =
   | { action: "noop" }
   | { action: "set"; operation: SyncOperation }
   | { action: "hard_delete" };
+
+let queueChangeListener: (() => void) | null = null;
+let queueChangedInTransaction = false;
+
+export function setQueueChangeListener(listener: (() => void) | null) {
+  queueChangeListener = listener;
+}
+
+function markQueueChanged() {
+  queueChangedInTransaction = true;
+}
+
+function notifyQueueChangeIfNeeded() {
+  if (!queueChangedInTransaction) {
+    return;
+  }
+
+  queueChangedInTransaction = false;
+  queueChangeListener?.();
+}
 
 function collapseOperations(
   existing: SyncOperation,
@@ -57,6 +77,7 @@ export function enqueue(
         attemptCount: 0,
       })
       .run();
+    markQueueChanged();
     return;
   }
 
@@ -77,7 +98,18 @@ export function enqueue(
       .set({ operation: result.operation })
       .where(eq(syncQueue.id, existing.id))
       .run();
+    markQueueChanged();
   }
+}
+
+export function runInSyncTransaction(
+  db: ExpoSQLiteDatabase,
+  fn: (tx: SyncTransaction) => void,
+) {
+  db.transaction((tx) => {
+    fn(tx);
+  });
+  notifyQueueChangeIfNeeded();
 }
 
 export function logSyncQueue(db: ExpoSQLiteDatabase) {

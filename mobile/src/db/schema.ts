@@ -103,3 +103,9 @@ export const syncQueue = sqliteTable(
     ),
   ],
 );
+
+export const syncState = sqliteTable("sync_state", {
+  id: text().primaryKey(),
+  cursor: integer(),
+  lastSyncedAt: integer("last_synced_at", { mode: "timestamp_ms" }),
+});

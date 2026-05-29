@@ -15,6 +15,13 @@
       "when": 1779739237138,
       "tag": "0001_yummy_thunderbolts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1779740000000,
+      "tag": "0002_sync_state",
+      "breakpoints": true
     }
   ]
 }

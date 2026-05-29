@@ -1,6 +1,6 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
-import { enqueue, logSyncQueue } from "@/db/sync-queue";
+import { enqueue, runInSyncTransaction } from "@/db/sync-queue";
 import { list, type CreateListArgs, type UpdateListArgs } from "@/db/schema";
 
 export function getLists(db: ExpoSQLiteDatabase) {
@@ -22,7 +22,7 @@ export function getList(db: ExpoSQLiteDatabase, id: string) {
 
 export async function createList(db: ExpoSQLiteDatabase, data: CreateListArgs) {
   const now = new Date();
-  db.transaction((tx) => {
+  runInSyncTransaction(db, (tx) => {
     tx.insert(list)
       .values({
         ...data,
@@ -36,7 +36,7 @@ export async function createList(db: ExpoSQLiteDatabase, data: CreateListArgs) {
 
 export async function updateList(db: ExpoSQLiteDatabase, data: UpdateListArgs) {
   const now = new Date();
-  db.transaction((tx) => {
+  runInSyncTransaction(db, (tx) => {
     tx.update(list)
       .set({ ...data, updatedAt: now })
       .where(and(eq(list.id, data.id), isNull(list.deletedAt)))
@@ -47,7 +47,7 @@ export async function updateList(db: ExpoSQLiteDatabase, data: UpdateListArgs) {
 
 export async function deleteList(db: ExpoSQLiteDatabase, id: string) {
   const now = new Date();
-  db.transaction((tx) => {
+  runInSyncTransaction(db, (tx) => {
     tx.update(list)
       .set({ deletedAt: now, updatedAt: now })
       .where(and(eq(list.id, id), isNull(list.deletedAt)))

@@ -3,7 +3,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { useColorScheme } from "react-native";
 import { SQLiteProvider } from "expo-sqlite";
@@ -11,9 +11,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { authClient } from "@/lib/auth-client";
+import { queryClient } from "@/lib/query-client";
 import { migrateDatabase } from "@/db/migrate";
-
-const queryClient = new QueryClient();
+import { SyncScheduler } from "@/sync/sync-scheduler";
 
 export default function AppLayout() {
   const { isPending, data: session } = authClient.useSession();
@@ -37,14 +37,16 @@ export default function AppLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          <SQLiteProvider databaseName="goku-lists.db" onInit={migrateDatabase}>
-            <AnimatedSplashOverlay />
-            <Slot />
-          </SQLiteProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <SQLiteProvider databaseName="goku-lists.db" onInit={migrateDatabase}>
+          <QueryClientProvider client={queryClient}>
+            <SyncScheduler>
+              <AnimatedSplashOverlay />
+              <Slot />
+            </SyncScheduler>
+          </QueryClientProvider>
+        </SQLiteProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

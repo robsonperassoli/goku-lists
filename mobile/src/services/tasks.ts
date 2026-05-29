@@ -1,6 +1,6 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
-import { enqueue } from "@/db/sync-queue";
+import { enqueue, runInSyncTransaction } from "@/db/sync-queue";
 import { task, type CreateTaskArgs, type UpdateTaskArgs } from "@/db/schema";
 
 export function getTasks(db: ExpoSQLiteDatabase, listId: string) {
@@ -22,7 +22,7 @@ export function getTask(db: ExpoSQLiteDatabase, id: string) {
 
 export async function createTask(db: ExpoSQLiteDatabase, data: CreateTaskArgs) {
   const now = new Date();
-  db.transaction((tx) => {
+  runInSyncTransaction(db, (tx) => {
     tx.insert(task)
       .values({
         ...data,
@@ -36,7 +36,7 @@ export async function createTask(db: ExpoSQLiteDatabase, data: CreateTaskArgs) {
 
 export async function updateTask(db: ExpoSQLiteDatabase, data: UpdateTaskArgs) {
   const now = new Date();
-  db.transaction((tx) => {
+  runInSyncTransaction(db, (tx) => {
     tx.update(task)
       .set({
         title: data.title,
@@ -54,7 +54,7 @@ export async function updateTask(db: ExpoSQLiteDatabase, data: UpdateTaskArgs) {
 
 export async function deleteTask(db: ExpoSQLiteDatabase, id: string) {
   const now = new Date();
-  db.transaction((tx) => {
+  runInSyncTransaction(db, (tx) => {
     tx.update(task)
       .set({ deletedAt: now, updatedAt: now })
       .where(and(eq(task.id, id), isNull(task.deletedAt)))
