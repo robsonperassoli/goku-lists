@@ -15,9 +15,9 @@ function shouldApply(
   return changeUpdatedAt >= localUpdatedAt.getTime();
 }
 
-function applyListChange(tx: SyncTransaction, change: SyncChange) {
+function applyListChange(tx: SyncTransaction, change: SyncChange): boolean {
   if (change.table !== "list") {
-    return;
+    return false;
   }
 
   const existing = tx
@@ -27,7 +27,7 @@ function applyListChange(tx: SyncTransaction, change: SyncChange) {
     .get();
 
   if (!shouldApply(existing?.updatedAt, change.updatedAt)) {
-    return;
+    return false;
   }
 
   const updatedAt = new Date(change.updatedAt);
@@ -42,14 +42,15 @@ function applyListChange(tx: SyncTransaction, change: SyncChange) {
         .set({ deletedAt, updatedAt })
         .where(eq(list.id, change.id))
         .run();
+      return true;
     }
 
-    return;
+    return false;
   }
 
   const data = change.data as ListSyncData | undefined;
   if (!data) {
-    return;
+    return false;
   }
 
   const values = {
@@ -64,15 +65,16 @@ function applyListChange(tx: SyncTransaction, change: SyncChange) {
 
   if (existing) {
     tx.update(list).set(values).where(eq(list.id, change.id)).run();
-    return;
+    return true;
   }
 
   tx.insert(list).values(values).run();
+  return true;
 }
 
-function applyTaskChange(tx: SyncTransaction, change: SyncChange) {
+function applyTaskChange(tx: SyncTransaction, change: SyncChange): boolean {
   if (change.table !== "task") {
-    return;
+    return false;
   }
 
   const existing = tx
@@ -82,7 +84,7 @@ function applyTaskChange(tx: SyncTransaction, change: SyncChange) {
     .get();
 
   if (!shouldApply(existing?.updatedAt, change.updatedAt)) {
-    return;
+    return false;
   }
 
   const updatedAt = new Date(change.updatedAt);
@@ -97,14 +99,15 @@ function applyTaskChange(tx: SyncTransaction, change: SyncChange) {
         .set({ deletedAt, updatedAt })
         .where(eq(task.id, change.id))
         .run();
+      return true;
     }
 
-    return;
+    return false;
   }
 
   const data = change.data as TaskSyncData | undefined;
   if (!data) {
-    return;
+    return false;
   }
 
   const values = {
@@ -122,19 +125,22 @@ function applyTaskChange(tx: SyncTransaction, change: SyncChange) {
 
   if (existing) {
     tx.update(task).set(values).where(eq(task.id, change.id)).run();
-    return;
+    return true;
   }
 
   tx.insert(task).values(values).run();
+  return true;
 }
 
-export function applyChange(tx: SyncTransaction, change: SyncChange) {
+export function applyChange(
+  tx: SyncTransaction,
+  change: SyncChange,
+): boolean {
   if (change.table === "list") {
-    applyListChange(tx, change);
-    return;
+    return applyListChange(tx, change);
   }
 
-  applyTaskChange(tx, change);
+  return applyTaskChange(tx, change);
 }
 
 export function applyChanges(db: ExpoSQLiteDatabase, changes: SyncChange[]) {

@@ -30,11 +30,7 @@ export async function runOnce(): Promise<void> {
   }
 
   try {
-    const pushResult = await pushChanges(deps.db);
-    if (pushResult.status === "transport_failed") {
-      return;
-    }
-
+    await pushChanges(deps.db);
     await pullChanges(deps.db, deps.queryClient);
   } catch (error) {
     if (error instanceof ApiAuthError || error instanceof ApiTransportError) {

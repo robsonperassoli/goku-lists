@@ -1,9 +1,24 @@
+import { and, eq } from "drizzle-orm";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
 import { getSync } from "@/api";
-import type { SyncChange, TaskSyncData } from "@/api";
+import type { SyncChange, SyncTable, TaskSyncData } from "@/api";
+import { syncQueue } from "@/db/schema";
+import type { SyncTransaction } from "@/db/sync-queue";
 import { applyChange } from "./apply-change";
 import { getCursor, setCursor } from "./sync-state";
+
+function clearQueueForPulledRecord(
+  tx: SyncTransaction,
+  table: SyncTable,
+  recordId: string,
+) {
+  tx.delete(syncQueue)
+    .where(
+      and(eq(syncQueue.tableName, table), eq(syncQueue.recordId, recordId)),
+    )
+    .run();
+}
 
 function collectInvalidations(changes: SyncChange[]) {
   const listIds = new Set<string>();
@@ -25,7 +40,7 @@ function collectInvalidations(changes: SyncChange[]) {
   return { listIds, taskIds };
 }
 
-function invalidateQueries(
+async function invalidateQueries(
   queryClient: QueryClient,
   changes: SyncChange[],
 ) {
@@ -35,15 +50,15 @@ function invalidateQueries(
 
   const { listIds, taskIds } = collectInvalidations(changes);
 
-  queryClient.invalidateQueries({ queryKey: ["lists"] });
+  await queryClient.invalidateQueries({ queryKey: ["lists"] });
 
   for (const listId of listIds) {
-    queryClient.invalidateQueries({ queryKey: ["list", listId] });
-    queryClient.invalidateQueries({ queryKey: ["tasks", listId] });
+    await queryClient.invalidateQueries({ queryKey: ["list", listId] });
+    await queryClient.invalidateQueries({ queryKey: ["tasks", listId] });
   }
 
   for (const taskId of taskIds) {
-    queryClient.invalidateQueries({ queryKey: ["task", taskId] });
+    await queryClient.invalidateQueries({ queryKey: ["task", taskId] });
   }
 }
 
@@ -55,13 +70,29 @@ export async function pullChanges(
   const body = await getSync(cursor);
   const sorted = [...body.changes].sort((a, b) => a.updatedAt - b.updatedAt);
 
+  const previousCursor = cursor ?? 0;
+  let nextCursor = previousCursor;
+  const applied: SyncChange[] = [];
+
   db.transaction((tx) => {
     for (const change of sorted) {
-      applyChange(tx, change);
-    }
+      if (!applyChange(tx, change)) {
+        continue;
+      }
 
-    setCursor(tx, body.cursor);
+      applied.push(change);
+      nextCursor = Math.max(nextCursor, change.updatedAt);
+      clearQueueForPulledRecord(tx, change.table, change.id);
+    }
   });
 
-  invalidateQueries(queryClient, sorted);
+  if (sorted.length === 0) {
+    nextCursor = body.cursor;
+  } else if (applied.length > 0) {
+    nextCursor = Math.max(nextCursor, body.cursor);
+  }
+
+  setCursor(db, nextCursor);
+
+  await invalidateQueries(queryClient, applied);
 }

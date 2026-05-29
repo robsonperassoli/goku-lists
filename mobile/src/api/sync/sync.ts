@@ -28,8 +28,8 @@ export async function postSync(changes: PushChange[]): Promise<PushResponse> {
   return (await response.json()) as PushResponse;
 }
 
-export async function getSync(since?: number | null): Promise<PullResponse> {
-  const path = since == null ? "/sync" : `/sync?since=${since}`;
+export async function getSync(since?: number): Promise<PullResponse> {
+  const path = since === undefined ? "/sync" : `/sync?since=${since}`;
   let response: Response;
 
   try {
