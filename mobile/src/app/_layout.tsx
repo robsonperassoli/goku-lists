@@ -2,10 +2,15 @@ import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
-} from "@react-navigation/native";
+} from "expo-router/react-navigation";
 import { QueryClientProvider } from "@tanstack/react-query";
-import React from "react";
-import { useColorScheme } from "react-native";
+import React, { Suspense } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  useColorScheme,
+  View,
+} from "react-native";
 import { SQLiteProvider } from "expo-sqlite";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
@@ -14,6 +19,19 @@ import { authClient } from "@/lib/auth-client";
 import { queryClient } from "@/lib/query-client";
 import { migrateDatabase } from "@/db/migrate";
 import { SyncScheduler } from "@/sync/sync-scheduler";
+import { Colors } from "@/constants/theme";
+
+function LoadingScreen() {
+  const colorScheme = useColorScheme();
+  const backgroundColor =
+    Colors[colorScheme === "dark" ? "dark" : "light"].background;
+
+  return (
+    <View style={[styles.loadingScreen, { backgroundColor }]}>
+      <ActivityIndicator size="large" />
+    </View>
+  );
+}
 
 export default function AppLayout() {
   const { isPending, data: session } = authClient.useSession();
@@ -33,20 +51,33 @@ export default function AppLayout() {
     }
   }, [session, isPending, segments, router]);
 
-  if (isPending) return null;
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <SQLiteProvider databaseName="goku-lists.db" onInit={migrateDatabase}>
-          <QueryClientProvider client={queryClient}>
-            <SyncScheduler>
-              <AnimatedSplashOverlay />
-              <Slot />
-            </SyncScheduler>
-          </QueryClientProvider>
-        </SQLiteProvider>
+        <QueryClientProvider client={queryClient}>
+          <Suspense fallback={<LoadingScreen />}>
+            <SQLiteProvider
+              databaseName="goku-lists.db"
+              onInit={migrateDatabase}
+              useSuspense
+            >
+              <SyncScheduler>
+                <AnimatedSplashOverlay />
+                <Slot />
+              </SyncScheduler>
+            </SQLiteProvider>
+          </Suspense>
+        </QueryClientProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingScreen: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+});
