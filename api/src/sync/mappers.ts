@@ -1,51 +1,48 @@
-import type { list, task } from "../db/schema"
+import type { List, Task } from "../lists"
 import { dateToMs } from "../lib/dates"
 import type { ListSyncData, SyncChange, TaskSyncData } from "./types"
 
-type ListRow = typeof list.$inferSelect
-type TaskRow = typeof task.$inferSelect
-
-function listData(row: ListRow): ListSyncData {
+function listData(list: List): ListSyncData {
   return {
-    name: row.name,
-    description: row.description,
-    image: row.image,
-    deletedAt: dateToMs(row.deletedAt),
+    name: list.name,
+    description: list.description,
+    image: list.image,
+    deletedAt: dateToMs(list.deletedAt),
   }
 }
 
-function taskData(row: TaskRow): TaskSyncData {
+function taskData(task: Task): TaskSyncData {
   return {
-    listId: row.listId,
-    title: row.title,
-    notes: row.notes,
-    completedAt: dateToMs(row.completedAt),
-    dueDate: dateToMs(row.dueDate),
-    position: row.position ?? 0,
-    deletedAt: dateToMs(row.deletedAt),
+    listId: task.listId,
+    title: task.title,
+    notes: task.notes,
+    completedAt: dateToMs(task.completedAt),
+    dueDate: dateToMs(task.dueDate),
+    position: task.position,
+    deletedAt: dateToMs(task.deletedAt),
   }
 }
 
-export function listRowToChange(row: ListRow): SyncChange {
-  const deletedAt = dateToMs(row.deletedAt)
+export function listToChange(list: List): SyncChange {
+  const deletedAt = dateToMs(list.deletedAt)
 
   return {
     table: "list",
-    id: row.id,
+    id: list.id,
     operation: deletedAt ? "delete" : "update",
-    updatedAt: dateToMs(row.updatedAt) ?? 0,
-    data: listData(row),
+    updatedAt: dateToMs(list.updatedAt) ?? 0,
+    data: listData(list),
   }
 }
 
-export function taskRowToChange(row: TaskRow): SyncChange {
-  const deletedAt = dateToMs(row.deletedAt)
+export function taskToChange(task: Task): SyncChange {
+  const deletedAt = dateToMs(task.deletedAt)
 
   return {
     table: "task",
-    id: row.id,
+    id: task.id,
     operation: deletedAt ? "delete" : "update",
-    updatedAt: dateToMs(row.updatedAt) ?? 0,
-    data: taskData(row),
+    updatedAt: dateToMs(task.updatedAt) ?? 0,
+    data: taskData(task),
   }
 }

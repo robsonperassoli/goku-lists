@@ -1,26 +1,23 @@
-import { and, eq } from "drizzle-orm"
 import type { db } from "../db"
-import { list, task } from "../db/schema"
-import { dateToMs, isStale, msToDate, optionalMsToDate } from "../lib/dates"
+import {
+  dateToMs,
+  isStale,
+  msToDate,
+  optionalMsToDate,
+} from "../lib/dates"
+import * as lists from "../lists"
+import type { ListsResult } from "../lists"
+import type { List, Task } from "../lists"
 import type { PushChange, PushResponse, RejectedChange } from "./types"
 
 type Db = typeof db
 
-type ApplyResult =
+type ApplySyncResult =
   | { ok: true }
   | { ok: false; reason: string; serverUpdatedAt?: number }
 
-function ownedList(
-  db: Db,
-  userId: string,
-  listId: string,
-): typeof list.$inferSelect | undefined {
-  return db
-    .select()
-    .from(list)
-    .where(and(eq(list.id, listId), eq(list.createdByUserId, userId)))
-    .get()
-}
+type ListPushChange = Extract<PushChange, { table: "list" }>
+type TaskPushChange = Extract<PushChange, { table: "task" }>
 
 function reject(
   id: string,
@@ -30,171 +27,137 @@ function reject(
   return { id, reason, serverUpdatedAt }
 }
 
-type ListPushChange = Extract<PushChange, { table: "list" }>
-type TaskPushChange = Extract<PushChange, { table: "task" }>
+function staleReject(entity: List | Task, changeUpdatedAt: number): ApplySyncResult {
+  return {
+    ok: false,
+    reason: "stale",
+    serverUpdatedAt: dateToMs(entity.updatedAt) ?? undefined,
+  }
+}
+
+function mapListsResult(result: ListsResult<unknown>): ApplySyncResult {
+  if (result.success) {
+    return { ok: true }
+  }
+
+  return { ok: false, reason: result.error.code }
+}
 
 function applyListChange(
   db: Db,
   userId: string,
   change: ListPushChange,
-): ApplyResult {
-  const existing = db.select().from(list).where(eq(list.id, change.id)).get()
+): ApplySyncResult {
   const updatedAt = msToDate(change.updatedAt)
+  const tombstone = { updatedAt, deletedAt: updatedAt }
 
   if (change.operation === "delete") {
+    const existing = lists.getList(db, change.id)
+
     if (!existing) {
       return { ok: false, reason: "not_found" }
     }
-    if (existing.createdByUserId !== userId) {
-      return { ok: false, reason: "not_owner" }
-    }
+
     if (isStale(existing.updatedAt, change.updatedAt)) {
-      return {
-        ok: false,
-        reason: "stale",
-        serverUpdatedAt: dateToMs(existing.updatedAt) ?? undefined,
-      }
+      return staleReject(existing, change.updatedAt)
     }
 
-    db.update(list)
-      .set({ deletedAt: updatedAt, updatedAt })
-      .where(eq(list.id, change.id))
-      .run()
-
-    return { ok: true }
+    return mapListsResult(
+      lists.deleteList(db, userId, change.id, tombstone),
+    )
   }
 
   const data = change.data
+  const existing = lists.getList(db, change.id)
 
-  if (!existing) {
-    db.insert(list)
-      .values({
-        id: change.id,
+  if (existing) {
+    if (isStale(existing.updatedAt, change.updatedAt)) {
+      return staleReject(existing, change.updatedAt)
+    }
+
+    return mapListsResult(
+      lists.updateList(db, userId, change.id, {
         name: data.name,
         description: data.description,
         image: data.image,
-        createdByUserId: userId,
-        createdAt: updatedAt,
         updatedAt,
-        deletedAt: null,
-      })
-      .run()
-
-    return { ok: true }
+      }),
+    )
   }
 
-  if (existing.createdByUserId !== userId) {
-    return { ok: false, reason: "not_owner" }
-  }
-  if (isStale(existing.updatedAt, change.updatedAt)) {
-    return {
-      ok: false,
-      reason: "stale",
-      serverUpdatedAt: dateToMs(existing.updatedAt) ?? undefined,
-    }
-  }
-
-  db.update(list)
-    .set({
+  return mapListsResult(
+    lists.createList(db, userId, {
+      id: change.id,
       name: data.name,
       description: data.description,
       image: data.image,
+      createdAt: updatedAt,
       updatedAt,
-      deletedAt: null,
-    })
-    .where(eq(list.id, change.id))
-    .run()
-
-  return { ok: true }
+    }),
+  )
 }
 
 function applyTaskChange(
   db: Db,
   userId: string,
   change: TaskPushChange,
-): ApplyResult {
-  const existing = db.select().from(task).where(eq(task.id, change.id)).get()
+): ApplySyncResult {
   const updatedAt = msToDate(change.updatedAt)
+  const tombstone = { updatedAt, deletedAt: updatedAt }
 
   if (change.operation === "delete") {
+    const existing = lists.getTask(db, change.id)
+
     if (!existing) {
       return { ok: false, reason: "not_found" }
     }
-    if (existing.createdByUserId !== userId) {
-      return { ok: false, reason: "not_owner" }
-    }
+
     if (isStale(existing.updatedAt, change.updatedAt)) {
-      return {
-        ok: false,
-        reason: "stale",
-        serverUpdatedAt: dateToMs(existing.updatedAt) ?? undefined,
-      }
+      return staleReject(existing, change.updatedAt)
     }
 
-    db.update(task)
-      .set({ deletedAt: updatedAt, updatedAt })
-      .where(eq(task.id, change.id))
-      .run()
-
-    return { ok: true }
+    return mapListsResult(
+      lists.deleteTask(db, userId, change.id, tombstone),
+    )
   }
 
   const data = change.data
+  const existing = lists.getTask(db, change.id)
 
-  const parentList = ownedList(db, userId, data.listId)
-  if (!parentList) {
-    return { ok: false, reason: "invalid_list" }
-  }
+  if (existing) {
+    if (isStale(existing.updatedAt, change.updatedAt)) {
+      return staleReject(existing, change.updatedAt)
+    }
 
-  if (!existing) {
-    db.insert(task)
-      .values({
-        id: change.id,
+    return mapListsResult(
+      lists.updateTask(db, userId, change.id, {
         listId: data.listId,
         title: data.title,
         notes: data.notes,
         completedAt: optionalMsToDate(data.completedAt),
         dueDate: optionalMsToDate(data.dueDate),
         position: data.position,
-        createdByUserId: userId,
-        createdAt: updatedAt,
         updatedAt,
-        deletedAt: null,
-      })
-      .run()
-
-    return { ok: true }
+      }),
+    )
   }
 
-  if (existing.createdByUserId !== userId) {
-    return { ok: false, reason: "not_owner" }
-  }
-  if (isStale(existing.updatedAt, change.updatedAt)) {
-    return {
-      ok: false,
-      reason: "stale",
-      serverUpdatedAt: dateToMs(existing.updatedAt) ?? undefined,
-    }
-  }
-
-  db.update(task)
-    .set({
+  return mapListsResult(
+    lists.createTask(db, userId, {
+      id: change.id,
       listId: data.listId,
       title: data.title,
       notes: data.notes,
       completedAt: optionalMsToDate(data.completedAt),
       dueDate: optionalMsToDate(data.dueDate),
       position: data.position,
+      createdAt: updatedAt,
       updatedAt,
-      deletedAt: null,
-    })
-    .where(eq(task.id, change.id))
-    .run()
-
-  return { ok: true }
+    }),
+  )
 }
 
-function applyChange(db: Db, userId: string, change: PushChange): ApplyResult {
+function applyChange(db: Db, userId: string, change: PushChange): ApplySyncResult {
   if (change.table === "list") {
     return applyListChange(db, userId, change)
   }
