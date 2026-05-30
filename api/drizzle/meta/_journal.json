@@ -22,6 +22,13 @@
       "when": 1775755000000,
       "tag": "0002_sync_deleted_at",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1779741000000,
+      "tag": "0003_shared_lists",
+      "breakpoints": true
     }
   ]
 }

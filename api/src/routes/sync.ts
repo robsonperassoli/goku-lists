@@ -1,13 +1,13 @@
-import { t } from "elysia";
-import type { App } from "../app";
-import { db } from "../db";
-import { pullSync, pushSync } from "../sync";
+import { t } from "elysia"
+import type { App } from "../app"
+import { db } from "../db"
+import { pullSync, pushSync } from "../sync"
 
 const listDataSchema = t.Object({
   name: t.String(),
   description: t.Nullable(t.String()),
   image: t.Nullable(t.String()),
-});
+})
 
 const taskDataSchema = t.Object({
   listId: t.String(),
@@ -16,7 +16,7 @@ const taskDataSchema = t.Object({
   completedAt: t.Nullable(t.Number()),
   dueDate: t.Nullable(t.Number()),
   position: t.Number(),
-});
+})
 
 const listChangeSchema = t.Union([
   t.Object({
@@ -32,7 +32,7 @@ const listChangeSchema = t.Union([
     operation: t.Literal("delete"),
     updatedAt: t.Number(),
   }),
-]);
+])
 
 const taskChangeSchema = t.Union([
   t.Object({
@@ -48,9 +48,9 @@ const taskChangeSchema = t.Union([
     operation: t.Literal("delete"),
     updatedAt: t.Number(),
   }),
-]);
+])
 
-const changeSchema = t.Union([listChangeSchema, taskChangeSchema]);
+const changeSchema = t.Union([listChangeSchema, taskChangeSchema])
 
 export default (app: App) =>
   app
@@ -65,4 +65,4 @@ export default (app: App) =>
       body: t.Object({
         changes: t.Array(changeSchema),
       }),
-    });
+    })

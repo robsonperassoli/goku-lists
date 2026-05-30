@@ -2,9 +2,10 @@ import { and, eq } from "drizzle-orm";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
 import { getSync } from "@/api";
-import type { SyncChange, SyncTable, TaskSyncData } from "@/api";
+import type { ListMemberSyncData, SyncChange, SyncTable, TaskSyncData } from "@/api";
 import { syncQueue } from "@/db/schema";
 import type { SyncTransaction } from "@/db/sync-queue";
+import { purgeListData } from "@/services/list-members";
 import { applyChange } from "./apply-change";
 import { getCursor, setCursor } from "./sync-state";
 
@@ -23,10 +24,20 @@ function clearQueueForPulledRecord(
 function collectInvalidations(changes: SyncChange[]) {
   const listIds = new Set<string>();
   const taskIds = new Set<string>();
+  const memberListIds = new Set<string>();
 
   for (const change of changes) {
     if (change.table === "list") {
       listIds.add(change.id);
+      continue;
+    }
+
+    if (change.table === "list_member") {
+      const data = change.data as ListMemberSyncData | undefined;
+      if (data?.listId) {
+        memberListIds.add(data.listId);
+        listIds.add(data.listId);
+      }
       continue;
     }
 
@@ -37,7 +48,7 @@ function collectInvalidations(changes: SyncChange[]) {
     }
   }
 
-  return { listIds, taskIds };
+  return { listIds, taskIds, memberListIds };
 }
 
 async function invalidateQueries(
@@ -48,9 +59,13 @@ async function invalidateQueries(
     return;
   }
 
-  const { listIds, taskIds } = collectInvalidations(changes);
+  const { listIds, taskIds, memberListIds } = collectInvalidations(changes);
 
   await queryClient.invalidateQueries({ queryKey: ["lists"] });
+
+  for (const listId of memberListIds) {
+    await queryClient.invalidateQueries({ queryKey: ["listMembership", listId] });
+  }
 
   for (const listId of listIds) {
     await queryClient.invalidateQueries({ queryKey: ["list", listId] });
@@ -65,6 +80,7 @@ async function invalidateQueries(
 export async function pullChanges(
   db: ExpoSQLiteDatabase,
   queryClient: QueryClient,
+  options?: { currentUserId?: string },
 ) {
   const cursor = getCursor(db);
   const body = await getSync(cursor);
@@ -73,6 +89,7 @@ export async function pullChanges(
   const previousCursor = cursor ?? 0;
   let nextCursor = previousCursor;
   const applied: SyncChange[] = [];
+  const purgedListIds = new Set<string>();
 
   db.transaction((tx) => {
     for (const change of sorted) {
@@ -83,8 +100,23 @@ export async function pullChanges(
       applied.push(change);
       nextCursor = Math.max(nextCursor, change.updatedAt);
       clearQueueForPulledRecord(tx, change.table, change.id);
+
+      if (
+        change.table === "list_member" &&
+        change.operation === "delete" &&
+        options?.currentUserId
+      ) {
+        const data = change.data as ListMemberSyncData | undefined;
+        if (data?.userId === options.currentUserId) {
+          purgedListIds.add(data.listId);
+        }
+      }
     }
   });
+
+  for (const listId of purgedListIds) {
+    purgeListData(db, listId);
+  }
 
   if (sorted.length === 0) {
     nextCursor = body.cursor;

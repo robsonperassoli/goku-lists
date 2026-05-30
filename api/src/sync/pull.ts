@@ -1,7 +1,8 @@
 import type { db } from "../db"
 import { msToDate } from "../lib/dates"
 import * as lists from "../lists"
-import { listToChange, taskToChange } from "./mappers"
+import { getListMembersForUser } from "../lists/members"
+import { listMemberToChange, listToChange, taskToChange } from "./mappers"
 import type { PullResponse, SyncChange } from "./types"
 
 type Db = typeof db
@@ -13,16 +14,17 @@ export function pullSync(db: Db, userId: string, since?: number): PullResponse {
     includeDeleted: !isInitial,
   }
 
-  const listChanges = lists
-    .getListsForUser(db, userId, query)
-    .map(listToChange)
-  const taskChanges = lists
-    .getTasksForUser(db, userId, query)
-    .map(taskToChange)
-
-  const changes: SyncChange[] = [...listChanges, ...taskChanges].sort(
-    (a, b) => a.updatedAt - b.updatedAt,
+  const listChanges = lists.getListsForUser(db, userId, query).map(listToChange)
+  const taskChanges = lists.getTasksForUser(db, userId, query).map(taskToChange)
+  const memberChanges = getListMembersForUser(db, userId, query).map(
+    listMemberToChange,
   )
+
+  const changes: SyncChange[] = [
+    ...listChanges,
+    ...taskChanges,
+    ...memberChanges,
+  ].sort((a, b) => a.updatedAt - b.updatedAt)
 
   const cursor =
     changes.length > 0

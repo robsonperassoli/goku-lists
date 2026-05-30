@@ -1,4 +1,4 @@
-export type SyncTable = "list" | "task"
+export type SyncTable = "list" | "task" | "list_member"
 
 export type SyncOperation = "create" | "update" | "delete"
 
@@ -22,6 +22,13 @@ export type ListSyncData = ListPushData & {
 }
 
 export type TaskSyncData = TaskPushData & {
+  deletedAt: number | null
+}
+
+export type ListMemberSyncData = {
+  listId: string
+  userId: string
+  role: "owner" | "contributor"
   deletedAt: number | null
 }
 
@@ -58,7 +65,7 @@ export type SyncChange = {
   id: string
   operation: SyncOperation
   updatedAt: number
-  data?: ListSyncData | TaskSyncData
+  data?: ListSyncData | TaskSyncData | ListMemberSyncData
 }
 
 export type PullResponse = {

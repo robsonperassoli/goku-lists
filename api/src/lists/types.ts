@@ -1,6 +1,8 @@
 export type ListsError =
   | { code: "not_found" }
   | { code: "not_owner" }
+  | { code: "not_member" }
+  | { code: "forbidden" }
   | { code: "invalid_list" }
 
 export type ListsResult<T> =
@@ -83,4 +85,13 @@ export type Task = {
 export type ChangesQuery = {
   since?: Date
   includeDeleted: boolean
+}
+
+export type ListMember = {
+  listId: string
+  userId: string
+  role: "owner" | "contributor"
+  joinedAt: Date
+  updatedAt: Date
+  deletedAt: Date | null
 }

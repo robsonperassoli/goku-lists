@@ -1,13 +1,7 @@
 import type { db } from "../db"
-import {
-  dateToMs,
-  isStale,
-  msToDate,
-  optionalMsToDate,
-} from "../lib/dates"
+import { dateToMs, isStale, msToDate, optionalMsToDate } from "../lib/dates"
+import type { List, ListsResult, Task } from "../lists"
 import * as lists from "../lists"
-import type { ListsResult } from "../lists"
-import type { List, Task } from "../lists"
 import type { PushChange, PushResponse, RejectedChange } from "./types"
 
 type Db = typeof db
@@ -27,7 +21,10 @@ function reject(
   return { id, reason, serverUpdatedAt }
 }
 
-function staleReject(entity: List | Task, changeUpdatedAt: number): ApplySyncResult {
+function staleReject(
+  entity: List | Task,
+  changeUpdatedAt: number,
+): ApplySyncResult {
   return {
     ok: false,
     reason: "stale",
@@ -62,9 +59,7 @@ function applyListChange(
       return staleReject(existing, change.updatedAt)
     }
 
-    return mapListsResult(
-      lists.deleteList(db, userId, change.id, tombstone),
-    )
+    return mapListsResult(lists.deleteList(db, userId, change.id, tombstone))
   }
 
   const data = change.data
@@ -116,9 +111,7 @@ function applyTaskChange(
       return staleReject(existing, change.updatedAt)
     }
 
-    return mapListsResult(
-      lists.deleteTask(db, userId, change.id, tombstone),
-    )
+    return mapListsResult(lists.deleteTask(db, userId, change.id, tombstone))
   }
 
   const data = change.data
@@ -157,7 +150,11 @@ function applyTaskChange(
   )
 }
 
-function applyChange(db: Db, userId: string, change: PushChange): ApplySyncResult {
+function applyChange(
+  db: Db,
+  userId: string,
+  change: PushChange,
+): ApplySyncResult {
   if (change.table === "list") {
     return applyListChange(db, userId, change)
   }

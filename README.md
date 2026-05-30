@@ -35,6 +35,7 @@ Create env files in each package (see `.gitignore` for ignored names). The API v
 | `AUTH_GOOGLE_ID` | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 | `DEV_MODE` | Set to `true` for Expo dev deep links |
+| `ANDROID_SHA256_CERT_FINGERPRINT` | SHA-256 signing cert fingerprint for Android App Links (see below) |
 
 **`mobile/.env`**
 
@@ -72,6 +73,32 @@ bun run ngrok
 ```
 
 Set `FRONTEND_URL` and `EXPO_PUBLIC_API_URL` to `https://<your-ngrok-domain>` while developing.
+
+### Android App Links (invite sharing)
+
+Invite links use `https://<your-ngrok-domain>/invite/{token}`. The app claims
+those URLs via `intentFilters` in `mobile/app.json`; the API serves
+`/.well-known/assetlinks.json` for domain verification.
+
+Add the SHA-256 fingerprint of the keystore that signs your dev APK to
+`api/.env`:
+
+```bash
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android | rg SHA256
+```
+
+Copy the fingerprint (with colons) into `ANDROID_SHA256_CERT_FINGERPRINT`.
+
+App Links require a native build (not Expo Go). After changing `app.json`:
+
+```bash
+cd mobile
+npx expo prebuild --clean
+npx expo run:android
+```
+
+Verify `assetlinks.json` is reachable at
+`https://<your-ngrok-domain>/.well-known/assetlinks.json`.
 
 ## Commands
 

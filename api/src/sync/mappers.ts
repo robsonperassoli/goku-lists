@@ -1,6 +1,15 @@
-import type { List, Task } from "../lists"
 import { dateToMs } from "../lib/dates"
-import type { ListSyncData, SyncChange, TaskSyncData } from "./types"
+import type { List, ListMember, Task } from "../lists"
+import type {
+  ListMemberSyncData,
+  ListSyncData,
+  SyncChange,
+  TaskSyncData,
+} from "./types"
+
+function memberId(member: ListMember): string {
+  return `${member.listId}:${member.userId}`
+}
 
 function listData(list: List): ListSyncData {
   return {
@@ -44,5 +53,26 @@ export function taskToChange(task: Task): SyncChange {
     operation: deletedAt ? "delete" : "update",
     updatedAt: dateToMs(task.updatedAt) ?? 0,
     data: taskData(task),
+  }
+}
+
+function memberData(member: ListMember): ListMemberSyncData {
+  return {
+    listId: member.listId,
+    userId: member.userId,
+    role: member.role,
+    deletedAt: dateToMs(member.deletedAt),
+  }
+}
+
+export function listMemberToChange(member: ListMember): SyncChange {
+  const deletedAt = dateToMs(member.deletedAt)
+
+  return {
+    table: "list_member",
+    id: memberId(member),
+    operation: deletedAt ? "delete" : "update",
+    updatedAt: dateToMs(member.updatedAt) ?? 0,
+    data: memberData(member),
   }
 }

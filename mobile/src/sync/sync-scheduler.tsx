@@ -19,7 +19,7 @@ export function SyncScheduler({ children }: { children: ReactNode }) {
       return;
     }
 
-    initSyncCoordinator({ db, queryClient });
+    initSyncCoordinator({ db, queryClient, userId: session.user.id });
     scheduleSync("session");
 
     return () => {

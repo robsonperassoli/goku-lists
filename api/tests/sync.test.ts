@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { addListMember } from "../src/lists/members"
 import { pullSync, pushSync } from "../src/sync"
 import { createTestDb, OTHER_USER_ID, USER_ID } from "./helpers/setup"
 
@@ -35,6 +36,7 @@ describe("pullSync", () => {
     const active = pullSync(db, USER_ID)
     expect(active.changes.map((change) => change.id).sort()).toEqual([
       "list-1",
+      "list-1:user-1",
       "task-1",
     ])
     expect(active.cursor).toBe(t2)
@@ -49,7 +51,10 @@ describe("pullSync", () => {
     ])
 
     const afterDelete = pullSync(db, USER_ID)
-    expect(afterDelete.changes.map((change) => change.id)).toEqual(["task-1"])
+    expect(afterDelete.changes.map((change) => change.id).sort()).toEqual([
+      "list-1:user-1",
+      "task-1",
+    ])
     expect(afterDelete.cursor).toBe(t2)
   })
 
@@ -70,7 +75,7 @@ describe("pullSync", () => {
     ])
 
     const initial = pullSync(db, USER_ID)
-    expect(initial.changes).toHaveLength(1)
+    expect(initial.changes).toHaveLength(2)
     expect(initial.cursor).toBe(t1)
 
     pushSync(db, USER_ID, [
@@ -97,6 +102,7 @@ describe("pullSync", () => {
     expect(incremental.changes.map((change) => change.id).sort()).toEqual([
       "list-1",
       "list-2",
+      "list-2:user-1",
     ])
     expect(
       incremental.changes.find((change) => change.id === "list-1")?.operation,
@@ -335,5 +341,49 @@ describe("pushSync", () => {
     expect(tombstone?.data).toMatchObject({
       deletedAt: 3_000,
     })
+  })
+
+  test("contributor can push tasks on a shared list", () => {
+    const db = createTestDb()
+
+    pushSync(db, USER_ID, [
+      {
+        table: "list",
+        id: "shared-list",
+        operation: "create",
+        updatedAt: 1_000,
+        data: { name: "Shared", description: null, image: null },
+      },
+    ])
+
+    addListMember(db, "shared-list", OTHER_USER_ID, "contributor", {
+      joinedAt: new Date(1_500),
+      updatedAt: new Date(1_500),
+    })
+
+    const result = pushSync(db, OTHER_USER_ID, [
+      {
+        table: "task",
+        id: "shared-task",
+        operation: "create",
+        updatedAt: 2_000,
+        data: {
+          listId: "shared-list",
+          title: "Bread",
+          notes: null,
+          completedAt: null,
+          dueDate: null,
+          position: 0,
+        },
+      },
+    ])
+
+    expect(result.accepted).toEqual(["shared-task"])
+    expect(result.rejected).toHaveLength(0)
+
+    const ownerPull = pullSync(db, USER_ID, 1_000)
+    expect(
+      ownerPull.changes.some((change) => change.id === "shared-task"),
+    ).toBe(true)
   })
 })
