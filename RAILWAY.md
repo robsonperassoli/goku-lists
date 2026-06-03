@@ -25,6 +25,7 @@ Settings in `railway.json` override the Railway dashboard on each deploy. The da
 | `DEV_MODE` | `false` |
 | `NGROK_DOMAIN` | Empty string in production if unused |
 | `ANDROID_SHA256_CERT_FINGERPRINT` | Optional; production signing cert for App Links |
+| `ANDROID_APK_DOWNLOAD_URL` | GitHub (or other) URL for latest Android APK shown on `GET /` |
 
 `PORT` is set by Railway. After the volume is attached, `RAILWAY_VOLUME_MOUNT_PATH` is also injected (should be `/data`).
 

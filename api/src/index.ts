@@ -3,6 +3,7 @@ import { config } from "./lib/config"
 import invitationRoutes from "./routes/invitations"
 import listRoutes from "./routes/lists"
 import syncRoutes from "./routes/sync"
+import appInfoRoutes from "./routes/app-info"
 import wellKnownRoutes from "./routes/well-known"
 
 app
@@ -10,8 +11,8 @@ app
   .use(listRoutes)
   .use(invitationRoutes)
   .use(wellKnownRoutes)
+  .use(appInfoRoutes)
   .get("/me", ({ user }) => user, { auth: true })
-  .get("/", () => "Hello Elysia")
   .listen(config.server.port)
 
 console.log(

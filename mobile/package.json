@@ -6,6 +6,8 @@
     "start": "bunx expo start",
     "prebuild": "bunx expo prebuild --clean --platform android",
     "android": "bunx expo run:android",
+    "android:release": "ENV=production sh -c 'cd android && ./gradlew assembleRelease' && echo '\\nAPK: android/app/build/outputs/apk/release/app-release.apk'",
+    "android:publish": "bash scripts/publish-android-release.sh",
     "lint": "bunx expo lint"
   },
   "dependencies": {

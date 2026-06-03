@@ -21,6 +21,7 @@ export const ConfigSchema = Type.Object({
   ngrokDomain: Type.String(),
   android: Type.Object({
     sha256CertFingerprint: Type.Optional(Type.String()),
+    apkDownloadUrl: Type.String({ minLength: 1 }),
   }),
 })
 
@@ -46,6 +47,7 @@ const rawConfig = {
   ngrokDomain: process.env.NGROK_DOMAIN,
   android: {
     sha256CertFingerprint: process.env.ANDROID_SHA256_CERT_FINGERPRINT,
+    apkDownloadUrl: process.env.ANDROID_APK_DOWNLOAD_URL,
   },
 }
 

@@ -38,6 +38,7 @@ Create env files in each package (see `.gitignore` for ignored names). The API v
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 | `DEV_MODE` | Set to `true` for Expo dev deep links |
 | `ANDROID_SHA256_CERT_FINGERPRINT` | SHA-256 signing cert fingerprint for Android App Links (see below) |
+| `ANDROID_APK_DOWNLOAD_URL` | HTTPS URL for latest Android APK (`GET /` download page) |
 
 **`mobile/.env`**
 

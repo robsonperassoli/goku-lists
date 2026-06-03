@@ -30,6 +30,11 @@
               "scheme": "https",
               "host": "factual-worm-mostly.ngrok-free.app",
               "pathPrefix": "/invitations"
+            },
+            {
+              "scheme": "https",
+              "host": "list.goku.tools",
+              "pathPrefix": "/invitations"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
@@ -44,7 +49,7 @@
       [
         "expo-router",
         {
-          "origin": "https://factual-worm-mostly.ngrok-free.app"
+          "origin": "https://list.goku.tools"
         }
       ],
       [
