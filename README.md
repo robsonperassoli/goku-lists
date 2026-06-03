@@ -29,9 +29,11 @@ Create env files in each package (see `.gitignore` for ignored names). The API v
 | Variable | Purpose |
 | --- | --- |
 | `PORT` | Server port (default `3000`) |
-| `FRONTEND_URL` | Public API base URL (your ngrok HTTPS URL in dev) |
+| `FRONTEND_URL` | Public API base URL (CORS, app links; your ngrok HTTPS URL in dev) |
+| `BETTER_AUTH_URL` | Better Auth base URL (defaults to `FRONTEND_URL` if unset) |
 | `NGROK_DOMAIN` | Reserved ngrok domain (without `https://`) |
 | `DB_FILE_NAME` | SQLite file path (e.g. `goku.sqlite`) |
+| `BETTER_AUTH_SECRET` | Session signing secret (32+ characters; generate with `openssl rand -base64 32`) |
 | `AUTH_GOOGLE_ID` | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 | `DEV_MODE` | Set to `true` for Expo dev deep links |
@@ -152,6 +154,10 @@ Set `ANDROID_SHA256_CERT_FINGERPRINT` on the API deployment that serves
 Until a dedicated release keystore is configured in `mobile/android`, local
 release builds may still use `mobile/android/app/debug.keystore`; use that
 fingerprint for those builds.
+
+## Railway (API)
+
+Production API deploy uses Railpack, SQLite on a volume at `/data`, and [`railway.json`](./railway.json). See [`RAILWAY.md`](./RAILWAY.md) for dashboard steps (root directory, volume, secrets).
 
 ## Commands
 

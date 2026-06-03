@@ -7,7 +7,8 @@ import { config } from "./config"
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
-  baseURL: config.server.frontendUrl,
+  secret: config.auth.secret,
+  baseURL: config.auth.url,
   plugins: [expo()],
   socialProviders: {
     google: {

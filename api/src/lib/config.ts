@@ -10,6 +10,8 @@ export const ConfigSchema = Type.Object({
     fileName: Type.String({ minLength: 1 }),
   }),
   auth: Type.Object({
+    url: Type.String({ minLength: 1 }),
+    secret: Type.String({ minLength: 32 }),
     google: Type.Object({
       clientId: Type.String({ minLength: 1 }),
       clientSecret: Type.String({ minLength: 1 }),
@@ -33,6 +35,8 @@ const rawConfig = {
     fileName: process.env.DB_FILE_NAME,
   },
   auth: {
+    url: process.env.BETTER_AUTH_URL ?? process.env.FRONTEND_URL,
+    secret: process.env.BETTER_AUTH_SECRET,
     google: {
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
