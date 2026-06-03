@@ -13,20 +13,6 @@ import { dateToMs } from "../lib/dates"
 import { logger } from "../lib/logger"
 import { invitationErrorStatus } from "./errors"
 
-function installAppHtml(): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Goku Lists</title>
-  </head>
-  <body>
-    <p>Please install Goku Lists, then open this invite link again.</p>
-  </body>
-</html>`
-}
-
 export default (app: App) =>
   app
     .get(
@@ -65,8 +51,9 @@ export default (app: App) =>
           logger.info(
             `Invite app open failed (intent fallback): token=${params.token}`,
           )
-          set.headers["content-type"] = "text/html; charset=utf-8"
-          return installAppHtml()
+          set.status = 302
+          set.headers.location = "/"
+          return ""
         }
 
         set.status = 302
