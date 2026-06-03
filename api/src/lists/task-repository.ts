@@ -1,6 +1,7 @@
-import { and, asc, eq, gt, isNull } from "drizzle-orm"
+import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm"
 import type { db } from "../db"
 import { task } from "../db/schema"
+import * as memberRepo from "./member-repository"
 
 type Db = typeof db
 type TaskRow = typeof task.$inferSelect
@@ -38,11 +39,7 @@ export function insertTask(db: Db, row: InsertTaskRow): void {
   db.insert(task).values(row).run()
 }
 
-export function updateTaskById(
-  db: Db,
-  id: string,
-  patch: UpdateTaskRow,
-): void {
+export function updateTaskById(db: Db, id: string, patch: UpdateTaskRow): void {
   db.update(task).set(patch).where(eq(task.id, id)).run()
 }
 
@@ -51,7 +48,13 @@ export function findTasksByUser(
   userId: string,
   query: { since?: Date; includeDeleted: boolean },
 ): TaskRow[] {
-  const conditions = [eq(task.createdByUserId, userId)]
+  const listIds = memberRepo.findAccessibleListIds(db, userId)
+
+  if (listIds.length === 0) {
+    return []
+  }
+
+  const conditions = [inArray(task.listId, listIds)]
 
   if (!query.includeDeleted) {
     conditions.push(isNull(task.deletedAt))

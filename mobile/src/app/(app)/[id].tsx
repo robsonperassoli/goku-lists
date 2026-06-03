@@ -13,6 +13,11 @@ import { EditableListTitle } from "@/components/editable-list-title";
 import { EmptyState } from "@/components/empty-state";
 import { useTasks, useCreateTask, useUpdateTask } from "@/hooks/tasks";
 import { useList, useDeleteList } from "@/hooks/lists";
+import {
+  useCreateInvitation,
+  useLeaveList,
+  useListMembership,
+} from "@/hooks/sharing";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 import useBottomSheetBackHandler from "@/hooks/use-bottom-sheet-back-handler";
@@ -33,6 +38,9 @@ export default function ListItems() {
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteList = useDeleteList();
+  const { data: role } = useListMembership(id);
+  const createInvitation = useCreateInvitation();
+  const leaveList = useLeaveList();
 
   const [showCompleted, setShowCompleted] = useState(false);
 
@@ -64,6 +72,19 @@ export default function ListItems() {
         },
       },
     );
+  };
+
+  const handleLeaveList = () => {
+    leaveList.mutate(id, {
+      onSuccess: () => {
+        listOptionsSheetRef.current?.close();
+        router.back();
+      },
+    });
+  };
+
+  const handleCreateInvitation = async () => {
+    return createInvitation.mutateAsync(id);
   };
 
   const handleDeleteList = () => {
@@ -178,8 +199,13 @@ export default function ListItems() {
       <ListOptionsSheet
         ref={listOptionsSheetRef}
         listName={list?.name ?? ""}
+        role={role}
         onDelete={handleDeleteList}
+        onLeave={handleLeaveList}
+        onCreateInvitation={handleCreateInvitation}
         isDeleting={deleteList.isPending}
+        isLeaving={leaveList.isPending}
+        isSharing={createInvitation.isPending}
       />
     </ThemedView>
   );

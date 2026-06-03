@@ -44,6 +44,30 @@ export function setCursor(db: DbLike, cursor: number) {
     .run();
 }
 
+export function clearCursor(db: DbLike) {
+  const existing = db
+    .select()
+    .from(syncState)
+    .where(eq(syncState.id, DEFAULT_ID))
+    .get();
+
+  if (existing) {
+    db.update(syncState)
+      .set({ cursor: null, lastSyncedAt: new Date() })
+      .where(eq(syncState.id, DEFAULT_ID))
+      .run();
+    return;
+  }
+
+  db.insert(syncState)
+    .values({
+      id: DEFAULT_ID,
+      cursor: null,
+      lastSyncedAt: new Date(),
+    })
+    .run();
+}
+
 export function touchLastSyncedAt(db: DbLike) {
   const existing = db
     .select()

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDrizzle } from './useDrizzle';
 import * as Lists from '@/services/lists';
 import type { CreateListArgs, UpdateListArgs } from '@/db/schema';
+import { authClient } from '@/lib/auth-client';
 
 export function useLists() {
   const db = useDrizzle();
@@ -25,11 +26,18 @@ export function useList(id: string) {
 export function useCreateList() {
   const db = useDrizzle();
   const queryClient = useQueryClient();
+  const { data: session } = authClient.useSession();
 
   return useMutation({
-    mutationFn: (data: CreateListArgs) => Lists.createList(db, data),
+    mutationFn: (data: CreateListArgs) =>
+      Lists.createList(db, data, session?.user.id),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['lists'] });
+      if (session?.user.id) {
+        queryClient.invalidateQueries({
+          queryKey: ['listMembership'],
+        });
+      }
     },
   });
 }

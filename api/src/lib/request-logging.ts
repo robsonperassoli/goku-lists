@@ -33,8 +33,7 @@ export const withRequestLogging = <const Base extends Elysia>(app: Base) =>
 
       const method = requestMethod ?? "UNKNOWN"
       const path = requestPath ?? "UNKNOWN"
-      const detail =
-        error instanceof Error ? error.message : String(error)
+      const detail = error instanceof Error ? error.message : String(error)
 
       logger.error(`${method} ${path} ${String(code)}: ${detail}`, error)
     })

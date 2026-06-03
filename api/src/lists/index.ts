@@ -1,6 +1,8 @@
 import type { db } from "../db"
 import type { list, task } from "../db/schema"
+import { canAccessList, isListOwner } from "./access"
 import * as listRepo from "./list-repository"
+import * as memberRepo from "./member-repository"
 import * as taskRepo from "./task-repository"
 import type {
   ChangesQuery,
@@ -91,8 +93,8 @@ export function createList(
   const existing = listRepo.findListById(db, input.id)
 
   if (existing) {
-    if (existing.createdByUserId !== userId) {
-      return err({ code: "not_owner" })
+    if (!canAccessList(db, userId, input.id)) {
+      return err({ code: "not_member" })
     }
 
     return updateList(db, userId, input.id, {
@@ -114,6 +116,15 @@ export function createList(
     deletedAt: null,
   })
 
+  memberRepo.insertMember(db, {
+    listId: input.id,
+    userId,
+    role: "owner",
+    joinedAt: input.createdAt,
+    updatedAt: input.updatedAt,
+    deletedAt: null,
+  })
+
   return ok(toList(listRepo.findListById(db, input.id)!))
 }
 
@@ -129,8 +140,8 @@ export function updateList(
     return err({ code: "not_found" })
   }
 
-  if (existing.createdByUserId !== userId) {
-    return err({ code: "not_owner" })
+  if (!canAccessList(db, userId, id)) {
+    return err({ code: "not_member" })
   }
 
   listRepo.updateListById(db, id, {
@@ -156,7 +167,7 @@ export function deleteList(
     return err({ code: "not_found" })
   }
 
-  if (existing.createdByUserId !== userId) {
+  if (!isListOwner(db, userId, id)) {
     return err({ code: "not_owner" })
   }
 
@@ -176,7 +187,7 @@ export function createTask(
   userId: string,
   input: NewTask,
 ): ListsResult<Task> {
-  const parentList = listRepo.findOwnedListById(db, userId, input.listId)
+  const parentList = listRepo.findAccessibleListById(db, userId, input.listId)
 
   if (!parentList) {
     return err({ code: "invalid_list" })
@@ -185,8 +196,8 @@ export function createTask(
   const existing = taskRepo.findTaskById(db, input.id)
 
   if (existing) {
-    if (existing.createdByUserId !== userId) {
-      return err({ code: "not_owner" })
+    if (!canAccessList(db, userId, existing.listId)) {
+      return err({ code: "not_member" })
     }
 
     return updateTask(db, userId, input.id, {
@@ -229,11 +240,11 @@ export function updateTask(
     return err({ code: "not_found" })
   }
 
-  if (existing.createdByUserId !== userId) {
-    return err({ code: "not_owner" })
+  if (!canAccessList(db, userId, existing.listId)) {
+    return err({ code: "not_member" })
   }
 
-  const parentList = listRepo.findOwnedListById(db, userId, input.listId)
+  const parentList = listRepo.findAccessibleListById(db, userId, input.listId)
 
   if (!parentList) {
     return err({ code: "invalid_list" })
@@ -265,8 +276,8 @@ export function deleteTask(
     return err({ code: "not_found" })
   }
 
-  if (existing.createdByUserId !== userId) {
-    return err({ code: "not_owner" })
+  if (!canAccessList(db, userId, existing.listId)) {
+    return err({ code: "not_member" })
   }
 
   taskRepo.updateTaskById(db, id, {
@@ -288,6 +299,7 @@ export type {
   DeleteList,
   DeleteTask,
   List,
+  ListMember,
   ListsError,
   ListsResult,
   NewList,

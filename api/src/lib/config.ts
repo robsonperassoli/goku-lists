@@ -17,6 +17,9 @@ export const ConfigSchema = Type.Object({
   }),
   devMode: Type.Boolean(),
   ngrokDomain: Type.String(),
+  android: Type.Object({
+    sha256CertFingerprint: Type.Optional(Type.String()),
+  }),
 })
 
 export type Config = Static<typeof ConfigSchema>
@@ -37,6 +40,9 @@ const rawConfig = {
   },
   devMode: process.env.DEV_MODE === "true",
   ngrokDomain: process.env.NGROK_DOMAIN,
+  android: {
+    sha256CertFingerprint: process.env.ANDROID_SHA256_CERT_FINGERPRINT,
+  },
 }
 
 if (!Value.Check(ConfigSchema, rawConfig)) {

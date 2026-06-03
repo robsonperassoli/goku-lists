@@ -1,8 +1,13 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
 import type { SyncTransaction } from "@/db/sync-queue";
-import { list, task } from "@/db/schema";
-import type { ListSyncData, SyncChange, TaskSyncData } from "@/api";
+import { list, listMember, task } from "@/db/schema";
+import type {
+  ListMemberSyncData,
+  ListSyncData,
+  SyncChange,
+  TaskSyncData,
+} from "@/api";
 
 function shouldApply(
   localUpdatedAt: Date | undefined,
@@ -132,12 +137,94 @@ function applyTaskChange(tx: SyncTransaction, change: SyncChange): boolean {
   return true;
 }
 
+function applyListMemberChange(
+  tx: SyncTransaction,
+  change: SyncChange,
+): boolean {
+  if (change.table !== "list_member") {
+    return false;
+  }
+
+  const data = change.data as ListMemberSyncData | undefined;
+  if (!data) {
+    return false;
+  }
+
+  const existing = tx
+    .select()
+    .from(listMember)
+    .where(
+      and(
+        eq(listMember.listId, data.listId),
+        eq(listMember.userId, data.userId),
+      ),
+    )
+    .get();
+
+  if (!shouldApply(existing?.updatedAt, change.updatedAt)) {
+    return false;
+  }
+
+  const updatedAt = new Date(change.updatedAt);
+
+  if (change.operation === "delete") {
+    const deletedAt = data.deletedAt
+      ? new Date(data.deletedAt)
+      : updatedAt;
+
+    if (existing) {
+      tx.update(listMember)
+        .set({ deletedAt, updatedAt, role: data.role })
+        .where(
+          and(
+            eq(listMember.listId, data.listId),
+            eq(listMember.userId, data.userId),
+          ),
+        )
+        .run();
+      return true;
+    }
+
+    return false;
+  }
+
+  const joinedAt = existing?.joinedAt ?? updatedAt;
+  const values = {
+    listId: data.listId,
+    userId: data.userId,
+    role: data.role,
+    joinedAt,
+    updatedAt,
+    deletedAt: data.deletedAt ? new Date(data.deletedAt) : null,
+  };
+
+  if (existing) {
+    tx.update(listMember)
+      .set(values)
+      .where(
+        and(
+          eq(listMember.listId, data.listId),
+          eq(listMember.userId, data.userId),
+        ),
+      )
+      .run();
+    return true;
+  }
+
+  tx.insert(listMember).values(values).run();
+  return true;
+}
+
 export function applyChange(
   tx: SyncTransaction,
   change: SyncChange,
 ): boolean {
   if (change.table === "list") {
     return applyListChange(tx, change);
+  }
+
+  if (change.table === "list_member") {
+    return applyListMemberChange(tx, change);
   }
 
   return applyTaskChange(tx, change);

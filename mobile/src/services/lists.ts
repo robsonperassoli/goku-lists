@@ -1,7 +1,7 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
 import { enqueue, runInSyncTransaction } from "@/db/sync-queue";
-import { list, type CreateListArgs, type UpdateListArgs } from "@/db/schema";
+import { list, listMember, type CreateListArgs, type UpdateListArgs } from "@/db/schema";
 
 export function getLists(db: ExpoSQLiteDatabase) {
   return db
@@ -20,7 +20,11 @@ export function getList(db: ExpoSQLiteDatabase, id: string) {
     .get();
 }
 
-export async function createList(db: ExpoSQLiteDatabase, data: CreateListArgs) {
+export async function createList(
+  db: ExpoSQLiteDatabase,
+  data: CreateListArgs,
+  userId?: string,
+) {
   const now = new Date();
   runInSyncTransaction(db, (tx) => {
     tx.insert(list)
@@ -31,6 +35,19 @@ export async function createList(db: ExpoSQLiteDatabase, data: CreateListArgs) {
       })
       .run();
     enqueue(tx, "list", data.id, "create");
+
+    if (userId) {
+      tx.insert(listMember)
+        .values({
+          listId: data.id,
+          userId,
+          role: "owner",
+          joinedAt: now,
+          updatedAt: now,
+          deletedAt: null,
+        })
+        .run();
+    }
   });
 }
 

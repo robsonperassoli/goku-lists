@@ -1,6 +1,7 @@
-import { and, asc, eq, gt, isNull } from "drizzle-orm"
+import { and, asc, eq, gt, inArray, isNull } from "drizzle-orm"
 import type { db } from "../db"
 import { list } from "../db/schema"
+import * as memberRepo from "./member-repository"
 
 type Db = typeof db
 type ListRow = typeof list.$inferSelect
@@ -33,22 +34,26 @@ export function findOwnedListById(
   userId: string,
   id: string,
 ): ListRow | undefined {
-  return db
-    .select()
-    .from(list)
-    .where(and(eq(list.id, id), eq(list.createdByUserId, userId)))
-    .get()
+  if (!memberRepo.findActiveMemberByListAndUser(db, id, userId)) {
+    return undefined
+  }
+
+  return findListById(db, id)
+}
+
+export function findAccessibleListById(
+  db: Db,
+  userId: string,
+  id: string,
+): ListRow | undefined {
+  return findOwnedListById(db, userId, id)
 }
 
 export function insertList(db: Db, row: InsertListRow): void {
   db.insert(list).values(row).run()
 }
 
-export function updateListById(
-  db: Db,
-  id: string,
-  patch: UpdateListRow,
-): void {
+export function updateListById(db: Db, id: string, patch: UpdateListRow): void {
   db.update(list).set(patch).where(eq(list.id, id)).run()
 }
 
@@ -57,7 +62,13 @@ export function findListsByUser(
   userId: string,
   query: { since?: Date; includeDeleted: boolean },
 ): ListRow[] {
-  const conditions = [eq(list.createdByUserId, userId)]
+  const listIds = memberRepo.findAccessibleListIds(db, userId)
+
+  if (listIds.length === 0) {
+    return []
+  }
+
+  const conditions = [inArray(list.id, listIds)]
 
   if (!query.includeDeleted) {
     conditions.push(isNull(list.deletedAt))

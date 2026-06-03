@@ -15,11 +15,17 @@ import { SQLiteProvider } from "expo-sqlite";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import { Slot, useRouter, useSegments } from "expo-router";
+import * as Linking from "expo-linking";
 import { authClient } from "@/lib/auth-client";
 import { queryClient } from "@/lib/query-client";
 import { migrateDatabase } from "@/db/migrate";
 import { SyncScheduler } from "@/sync/sync-scheduler";
 import { Colors } from "@/constants/theme";
+import {
+  getPendingInviteToken,
+  setPendingInviteToken,
+} from "@/lib/pending-invite";
+import { extractInviteToken } from "@/lib/invite-link";
 
 function LoadingScreen() {
   const colorScheme = useColorScheme();
@@ -40,6 +46,28 @@ export default function AppLayout() {
   const router = useRouter();
 
   React.useEffect(() => {
+    const handleUrl = (url: string | null) => {
+      if (!url) {
+        return;
+      }
+
+      const token = extractInviteToken(url);
+      if (token) {
+        void setPendingInviteToken(token);
+      }
+    };
+
+    void Linking.getInitialURL().then(handleUrl);
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      handleUrl(url);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  React.useEffect(() => {
     if (isPending) return;
 
     const inAuthGroup = segments[0] === "(auth)";
@@ -49,6 +77,26 @@ export default function AppLayout() {
     } else if (session && inAuthGroup) {
       router.replace("/(app)");
     }
+  }, [session, isPending, segments, router]);
+
+  React.useEffect(() => {
+    if (isPending || !session) {
+      return;
+    }
+
+    void (async () => {
+      const pendingToken = await getPendingInviteToken();
+      if (!pendingToken) {
+        return;
+      }
+
+      const inInvite =
+        segments[0] === "invite" && segments[1] === pendingToken;
+
+      if (!inInvite) {
+        router.replace(`/invite/${pendingToken}`);
+      }
+    })();
   }, [session, isPending, segments, router]);
 
   return (

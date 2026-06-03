@@ -1,10 +1,22 @@
 import {
   integer,
+  primaryKey,
   real,
   sqliteTable,
   text,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+
+export type ListMemberRole = "owner" | "contributor";
+
+export type ListMember = {
+  listId: string;
+  userId: string;
+  role: ListMemberRole;
+  joinedAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+};
 
 export type List = {
   id: string;
@@ -65,6 +77,21 @@ export const list = sqliteTable("list", {
     .notNull(),
   deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 });
+
+export const listMember = sqliteTable(
+  "list_member",
+  {
+    listId: text("list_id")
+      .notNull()
+      .references(() => list.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull(),
+    role: text("role").notNull().$type<ListMemberRole>(),
+    joinedAt: integer("joined_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [primaryKey({ columns: [table.listId, table.userId] })],
+);
 
 export const task = sqliteTable("task", {
   id: text().primaryKey(),
