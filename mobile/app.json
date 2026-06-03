@@ -8,7 +8,8 @@
     "scheme": "goku-lists",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.gokulists.app"
     },
     "android": {
       "package": "com.gokulists.app",
