@@ -80,25 +80,78 @@ Invite links use `https://<your-ngrok-domain>/invite/{token}`. The app claims
 those URLs via `intentFilters` in `mobile/app.json`; the API serves
 `/.well-known/assetlinks.json` for domain verification.
 
-Add the SHA-256 fingerprint of the keystore that signs your dev APK to
-`api/.env`:
+The fingerprint in `api/.env` must match the certificate that **signed the APK
+on the device**. If `ANDROID_SHA256_CERT_FINGERPRINT` is missing or wrong,
+`assetlinks.json` has an empty `sha256_cert_fingerprints` array and invite links
+open the HTML fallback instead of the app.
 
-```bash
-keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android | rg SHA256
-```
+#### New dev install
 
-Copy the fingerprint (with colons) into `ANDROID_SHA256_CERT_FINGERPRINT`.
+1. Prebuild and run Android once (creates the project debug keystore):
 
-App Links require a native build (not Expo Go). After changing `app.json`:
+   ```bash
+   cd mobile
+   npx expo prebuild
+   npx expo run:android
+   ```
 
-```bash
-cd mobile
-npx expo prebuild --clean
-npx expo run:android
-```
+2. Read SHA-256 from the keystore Expo/React Native uses (not
+   `~/.android/debug.keystore`):
 
-Verify `assetlinks.json` is reachable at
-`https://<your-ngrok-domain>/.well-known/assetlinks.json`.
+   ```bash
+   keytool -list -v \
+     -keystore mobile/android/app/debug.keystore \
+     -alias androiddebugkey \
+     -storepass android | rg SHA256
+   ```
+
+   Or from Android Studio: open `mobile/android` → Gradle → **app** →
+   **android** → **signingReport** (same SHA-256 under the debug variant).
+
+   Or:
+
+   ```bash
+   cd mobile/android && ./gradlew signingReport
+   ```
+
+3. Copy the fingerprint (colons OK) into `api/.env`:
+
+   ```bash
+   ANDROID_SHA256_CERT_FINGERPRINT=FA:C6:17:45:...
+   ```
+
+4. Restart the API and confirm
+   `https://<your-ngrok-domain>/.well-known/assetlinks.json` lists your
+   fingerprint under `com.gokulists.app`.
+
+5. After changing `app.json` intent filters or domain, rebuild:
+
+   ```bash
+   cd mobile
+   npx expo prebuild --clean
+   npx expo run:android
+   ```
+
+   Re-verify on device: `adb shell pm verify-app-links --re-verify com.gokulists.app`
+
+App Links require a native build (not Expo Go).
+
+#### Production
+
+Use the SHA-256 of the keystore that signs the build users install:
+
+| How you ship | Where to get SHA-256 |
+| --- | --- |
+| **EAS Build** | `eas credentials -p android`, or the upload/release keystore EAS uses |
+| **Local release keystore** | `keytool -list -v -keystore /path/to/release.keystore -alias YOUR_ALIAS` |
+| **Google Play (Play App Signing)** | Play Console → **Setup** → **App signing** → **App signing key certificate** |
+
+Set `ANDROID_SHA256_CERT_FINGERPRINT` on the API deployment that serves
+`/.well-known/assetlinks.json` for your production domain (not only ngrok).
+
+Until a dedicated release keystore is configured in `mobile/android`, local
+release builds may still use `mobile/android/app/debug.keystore`; use that
+fingerprint for those builds.
 
 ## Commands
 
