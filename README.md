@@ -83,7 +83,7 @@ those URLs via `intentFilters` in `mobile/app.json`; the API serves
 The fingerprint in `api/.env` must match the certificate that **signed the APK
 on the device**. If `ANDROID_SHA256_CERT_FINGERPRINT` is missing or wrong,
 `assetlinks.json` has an empty `sha256_cert_fingerprints` array and invite links
-open the HTML fallback instead of the app.
+hit a browser redirect instead of opening the app directly.
 
 #### New dev install
 

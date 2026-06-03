@@ -1,12 +1,13 @@
 import type { App } from "../app"
 import { ANDROID_PACKAGE } from "../lib/app-link"
+import { config } from "../lib/config"
 
 function normalizeFingerprint(value: string): string {
   return value.replace(/\s/g, "").toUpperCase()
 }
 
 function assetLinks() {
-  const fingerprint = process.env.ANDROID_SHA256_CERT_FINGERPRINT
+  const fingerprint = config.android.sha256CertFingerprint
   const fingerprints = fingerprint ? [normalizeFingerprint(fingerprint)] : []
 
   return [
