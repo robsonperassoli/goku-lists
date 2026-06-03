@@ -3,70 +3,84 @@ import type { App } from "../app"
 import { db } from "../db"
 import {
   acceptInvitation,
-  createInvitation,
   getInvitationPreview,
   revokeInvitation,
 } from "../invitations"
+import { androidIntentLink } from "../lib/app-link"
+import { auth } from "../lib/auth"
+import { config } from "../lib/config"
 import { dateToMs } from "../lib/dates"
-import { leaveList } from "../lists/members"
+import { logger } from "../lib/logger"
+import { invitationErrorStatus } from "./errors"
 
-function invitationErrorStatus(code: string): 403 | 404 | 410 | 409 {
-  switch (code) {
-    case "not_found":
-      return 404
-    case "expired":
-      return 410
-    case "already_accepted":
-      return 409
-    default:
-      return 403
-  }
+function installAppHtml(): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Goku Lists</title>
+  </head>
+  <body>
+    <p>Please install Goku Lists, then open this invite link again.</p>
+  </body>
+</html>`
 }
 
 export default (app: App) =>
   app
-    .post(
-      "/lists/:listId/invitations",
-      ({ user, params, set }) => {
-        const result = createInvitation(db, user.id, params.listId)
-
-        if (!result.success) {
-          set.status = invitationErrorStatus(result.error.code)
-          return { error: result.error.code }
-        }
-
-        return {
-          token: result.data.token,
-          expiresAt: dateToMs(result.data.expiresAt),
-        }
-      },
-      {
-        auth: true,
-        params: t.Object({ listId: t.String() }),
-      },
-    )
     .get(
       "/invitations/:token",
-      ({ params, set }) => {
-        const result = getInvitationPreview(db, params.token)
+      async ({ params, query, set, request }) => {
+        const session = await auth.api.getSession({ headers: request.headers })
 
-        if (!result.success) {
-          set.status = invitationErrorStatus(result.error.code)
-          return { error: result.error.code }
+        if (session) {
+          const result = getInvitationPreview(db, params.token)
+
+          if (!result.success) {
+            set.status = invitationErrorStatus(result.error.code)
+            return { error: result.error.code }
+          }
+
+          return {
+            token: result.data.token,
+            listId: result.data.listId,
+            listName: result.data.listName,
+            inviterName: result.data.inviterName,
+            expiresAt: dateToMs(result.data.expiresAt),
+            acceptedAt: dateToMs(result.data.acceptedAt),
+            revokedAt: dateToMs(result.data.revokedAt),
+          }
         }
 
-        return {
-          token: result.data.token,
-          listId: result.data.listId,
-          listName: result.data.listName,
-          inviterName: result.data.inviterName,
-          expiresAt: dateToMs(result.data.expiresAt),
-          acceptedAt: dateToMs(result.data.acceptedAt),
-          revokedAt: dateToMs(result.data.revokedAt),
+        const invitePath = `/invitations/${params.token}`
+        const fallbackUrl = new URL(
+          `${invitePath}?fallback=1`,
+          config.server.frontendUrl,
+        ).toString()
+
+        set.headers["cache-control"] = "no-store"
+
+        if (query.fallback === "1") {
+          logger.info(
+            `Invite app open failed (intent fallback): token=${params.token}`,
+          )
+          set.headers["content-type"] = "text/html; charset=utf-8"
+          return installAppHtml()
         }
+
+        set.status = 302
+        set.headers.location = androidIntentLink(`invite/${params.token}`, {
+          httpsFallback: fallbackUrl,
+        })
+
+        return ""
       },
       {
         params: t.Object({ token: t.String() }),
+        query: t.Object({
+          fallback: t.Optional(t.Literal("1")),
+        }),
       },
     )
     .post(
@@ -101,26 +115,5 @@ export default (app: App) =>
       {
         auth: true,
         params: t.Object({ token: t.String() }),
-      },
-    )
-    .delete(
-      "/lists/:listId/members/me",
-      ({ user, params, set }) => {
-        const now = new Date()
-        const result = leaveList(db, user.id, params.listId, {
-          updatedAt: now,
-          deletedAt: now,
-        })
-
-        if (!result.success) {
-          set.status = invitationErrorStatus(result.error.code)
-          return { error: result.error.code }
-        }
-
-        return { listId: params.listId }
-      },
-      {
-        auth: true,
-        params: t.Object({ listId: t.String() }),
       },
     )

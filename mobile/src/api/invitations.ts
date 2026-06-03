@@ -108,5 +108,5 @@ export function invitationLink(token: string): string {
     return `goku-lists://invite/${token}`;
   }
 
-  return `${baseUrl}/invite/${token}`;
+  return `${baseUrl}/invitations/${token}`;
 }

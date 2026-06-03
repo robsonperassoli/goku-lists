@@ -29,7 +29,7 @@
             {
               "scheme": "https",
               "host": "factual-worm-mostly.ngrok-free.app",
-              "pathPrefix": "/invite"
+              "pathPrefix": "/invitations"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

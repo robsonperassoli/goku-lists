@@ -76,7 +76,7 @@ Set `FRONTEND_URL` and `EXPO_PUBLIC_API_URL` to `https://<your-ngrok-domain>` wh
 
 ### Android App Links (invite sharing)
 
-Invite links use `https://<your-ngrok-domain>/invite/{token}`. The app claims
+Invite links use `https://<your-ngrok-domain>/invitations/{token}`. The app claims
 those URLs via `intentFilters` in `mobile/app.json`; the API serves
 `/.well-known/assetlinks.json` for domain verification.
 

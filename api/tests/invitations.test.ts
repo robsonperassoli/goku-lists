@@ -8,7 +8,7 @@ import { pullSync, pushSync } from "../src/sync"
 import { createTestDb, OTHER_USER_ID, USER_ID } from "./helpers/setup"
 
 describe("invitations", () => {
-  test("owner can create and invitee can accept", () => {
+  test("invitee can preview and accept", () => {
     const db = createTestDb()
 
     pushSync(db, USER_ID, [
