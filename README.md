@@ -156,6 +156,19 @@ Until a dedicated release keystore is configured in `mobile/android`, local
 release builds may still use `mobile/android/app/debug.keystore`; use that
 fingerprint for those builds.
 
+## Production Android release
+
+From `mobile/` (Android SDK installed, [`gh`](https://cli.github.com/) logged in):
+
+1. Create `mobile/.env.production` with `EXPO_PUBLIC_API_URL` set to your production API (e.g. `https://list.goku.tools`).
+2. `bun run prebuild` — after `app.json` changes, or the first time (generates `android/`).
+3. `bun run android:release` — builds `android/app/build/outputs/apk/release/app-release.apk`.
+4. `bun run android:publish` — uploads the APK to the GitHub release tagged `latest`.
+
+   Build and publish in one step: `bun run android:publish -- --build`.
+
+Set `ANDROID_APK_DOWNLOAD_URL` and `ANDROID_SHA256_CERT_FINGERPRINT` on the production API (see [Railway](#railway-api) / env table above).
+
 ## Railway (API)
 
 Production API deploy uses Railpack, SQLite on a volume at `/data`, and [`railway.json`](./railway.json). See [`RAILWAY.md`](./RAILWAY.md) for dashboard steps (root directory, volume, secrets).
@@ -189,6 +202,9 @@ Production API deploy uses Railpack, SQLite on a volume at `/data`, and [`railwa
 | `bun run ios` | Expo dev server, open iOS |
 | `bun run android` | Expo dev server, open Android |
 | `bun run web` | Expo dev server, open web |
+| `bun run prebuild` | Generate `android/` from Expo config |
+| `bun run android:release` | Build release APK (no install) |
+| `bun run android:publish` | Upload APK to GitHub release `latest` |
 | `bun run lint` | ESLint via Expo |
 
 Mobile uses Bun for scripts (`bun run lint`, etc.). Database migrations run at app startup via `src/db/migrate.ts`.
