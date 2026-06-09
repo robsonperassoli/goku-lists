@@ -48,9 +48,22 @@ Settings in `railway.json` override the Railway dashboard on each deploy. The da
 | `build.builder` | `RAILPACK` |
 | `build.watchPatterns` | Redeploy only when `api/**` changes |
 | `deploy.requiredMountPath` | `/data` — fail fast if volume not attached |
-| `deploy.startCommand` | `bun run db:migrate && bun run start` (migrations need the volume; [pre-deploy runs before the volume is mounted](https://docs.railway.com/guides/volumes)) |
+| `deploy.startCommand` | `bash scripts/start.sh` — migrate then `exec` into the server (see below) |
 | `deploy.healthcheckPath` | `/` |
 | `deploy.restartPolicyType` | `ON_FAILURE` |
+
+## Migrations and start command
+
+SQLite lives on the `/data` volume (`DB_FILE_NAME=/data/db/goku.sqlite`). Railway [mounts volumes only when the service container starts](https://docs.railway.com/guides/volumes), not during [pre-deploy](https://docs.railway.com/guides/pre-deploy-command). A `preDeployCommand` cannot read or write the database file, so migrations must run in the start command.
+
+[`api/scripts/start.sh`](./api/scripts/start.sh) runs migrations, then `exec`s into Bun so the server process is PID 1 and receives SIGTERM directly (needed for graceful shutdown in a later step):
+
+```bash
+bun run db:migrate
+exec bun src/index.ts
+```
+
+Using `bun run db:migrate && bun run start` in one shell line kept migrate and the server in the same command but left a shell as PID 1, which can swallow shutdown signals.
 
 ## CLI shortcuts
 

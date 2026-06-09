@@ -6,7 +6,7 @@
   },
   "deploy": {
     "requiredMountPath": "/data",
-    "startCommand": "bun run db:migrate && bun run start",
+    "startCommand": "bash scripts/start.sh",
     "healthcheckPath": "/",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE",
