@@ -57,7 +57,7 @@ if ! gh auth status >/dev/null 2>&1; then
 fi
 
 VERSION="$(bun -e 'console.log(require("./app.json").expo.version)')"
-NOTES="Android APK (app version ${VERSION}). Re-run this script to replace the binary on tag \`${TAG}\`."
+NOTES="Android APK (latest version)."
 
 echo "Publishing ${ASSET_NAME} to GitHub release tag: ${TAG}"
 
