@@ -4,19 +4,45 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-TAG=latest
+RELEASE_ENV="$ROOT/.env.release"
 APK_REL="android/app/build/outputs/apk/release/app-release.apk"
-ASSET_NAME="app-release.apk"
 APK="$ROOT/$APK_REL"
 BUILD=false
+
+read_release_env() {
+  local key="$1"
+  if [[ ! -f "$RELEASE_ENV" ]]; then
+    return 1
+  fi
+
+  local line
+  line="$(grep -E "^${key}=" "$RELEASE_ENV" | head -1 || true)"
+  if [[ -z "$line" ]]; then
+    return 1
+  fi
+
+  local value="${line#*=}"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  value="${value#\"}"
+  value="${value%\"}"
+  value="${value#\'}"
+  value="${value%\'}"
+
+  printf '%s' "$value"
+}
 
 usage() {
   echo "Usage: $(basename "$0") [--build]"
   echo ""
-  echo "  Upload the release APK to GitHub Releases (tag: ${TAG})."
+  echo "  Upload the release APK to the production API."
   echo "  --build   Run ./gradlew assembleRelease first (ENV=production)"
   echo ""
-  echo "Requires: gh auth login, android/ from bun run prebuild"
+  echo "Requires mobile/.env.release with:"
+  echo "  GOKU_RELEASE_API_URL          API base URL, e.g. https://list.goku.tools"
+  echo "  GOKU_RELEASE_UPLOAD_SECRET    Bearer token for POST /release"
+  echo ""
+  echo "Optional shell overrides: GOKU_RELEASE_API_URL, GOKU_RELEASE_UPLOAD_SECRET"
   exit "${1:-0}"
 }
 
@@ -30,6 +56,12 @@ for arg in "$@"; do
       ;;
   esac
 done
+
+if [[ ! -f "$RELEASE_ENV" ]]; then
+  echo "Missing ${RELEASE_ENV}" >&2
+  echo "Create it with GOKU_RELEASE_API_URL and GOKU_RELEASE_UPLOAD_SECRET." >&2
+  exit 1
+fi
 
 if [[ ! -d "$ROOT/android" ]]; then
   echo "Missing android/. Run from mobile/: bun run prebuild" >&2
@@ -46,32 +78,32 @@ if [[ ! -f "$APK" ]]; then
   exit 1
 fi
 
-if ! command -v gh >/dev/null 2>&1; then
-  echo "Install GitHub CLI: https://cli.github.com/" >&2
+UPLOAD_SECRET="${GOKU_RELEASE_UPLOAD_SECRET:-$(read_release_env GOKU_RELEASE_UPLOAD_SECRET || true)}"
+if [[ -z "$UPLOAD_SECRET" ]]; then
+  echo "Set GOKU_RELEASE_UPLOAD_SECRET in ${RELEASE_ENV}" >&2
   exit 1
 fi
 
-if ! gh auth status >/dev/null 2>&1; then
-  echo "Run: gh auth login" >&2
+API_URL="${GOKU_RELEASE_API_URL:-$(read_release_env GOKU_RELEASE_API_URL || true)}"
+if [[ -z "$API_URL" ]]; then
+  echo "Set GOKU_RELEASE_API_URL in ${RELEASE_ENV}" >&2
   exit 1
 fi
 
-VERSION="$(bun -e 'console.log(require("./app.json").expo.version)')"
-NOTES="Android APK (latest version)."
+API_URL="${API_URL%/}"
+UPLOAD_URL="${API_URL}/release"
 
-echo "Publishing ${ASSET_NAME} to GitHub release tag: ${TAG}"
+echo "Uploading APK to ${UPLOAD_URL}"
 
-if gh release view "$TAG" >/dev/null 2>&1; then
-  gh release upload "$TAG" "${APK}#${ASSET_NAME}" --clobber
-  gh release edit "$TAG" --notes "$NOTES" --latest=true
-  echo "Updated release ${TAG}"
-else
-  gh release create "$TAG" "${APK}#${ASSET_NAME}" \
-    --title "Latest (Android)" \
-    --notes "$NOTES" \
-    --latest
-  echo "Created release ${TAG}"
+RESPONSE="$(curl -fsS \
+  -X POST \
+  -H "Authorization: Bearer ${UPLOAD_SECRET}" \
+  -H "Content-Type: application/vnd.android.package-archive" \
+  --data-binary "@${APK}" \
+  "${UPLOAD_URL}")"
+
+echo "$RESPONSE"
+DOWNLOAD_URL="$(echo "$RESPONSE" | bun -e 'const r=JSON.parse(await Bun.stdin.text()); console.log(r.url ?? "")')"
+if [[ -n "$DOWNLOAD_URL" ]]; then
+  echo "Download: ${DOWNLOAD_URL}"
 fi
-
-RELEASE_URL="$(gh release view "$TAG" --json url -q .url)"
-echo "Release: ${RELEASE_URL}"

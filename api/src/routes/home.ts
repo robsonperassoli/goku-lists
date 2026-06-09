@@ -15,11 +15,7 @@ function downloadPage(apkUrl: string): string {
 }
 
 export default (app: App) =>
-  app
-    .get("/", ({ set }) => {
-      set.headers["content-type"] = "text/html; charset=utf-8"
-      return downloadPage(config.android.apkDownloadUrl)
-    })
-    .get("/android/apk", ({ redirect }) =>
-      redirect(config.android.apkDownloadUrl, 302),
-    )
+  app.get("/", ({ set }) => {
+    set.headers["content-type"] = "text/html; charset=utf-8"
+    return downloadPage(config.android.apkDownloadUrl)
+  })

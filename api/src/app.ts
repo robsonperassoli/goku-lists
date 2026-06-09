@@ -1,4 +1,5 @@
 import { cors } from "@elysiajs/cors"
+import { staticPlugin } from "@elysiajs/static"
 import { Elysia } from "elysia"
 import { auth } from "./lib/auth"
 import { config } from "./lib/config"
@@ -28,6 +29,15 @@ export const app = withRequestLogging(new Elysia())
     cors({
       origin: config.server.frontendUrl,
       credentials: true,
+    }),
+  )
+  .use(
+    staticPlugin({
+      assets: config.public.dir,
+      prefix: "/public",
+      headers: {
+        "Cache-Control": "public, max-age=300",
+      },
     }),
   )
   .use(betterAuth)

@@ -12,20 +12,30 @@ Settings in `railway.json` override the Railway dashboard on each deploy. The da
 3. **Settings → Config-as-code:** leave default (`railway.json` at repo root) or set path `/railway.json`.
 4. **Volumes → Add volume** mounted at `/data` on the api service.  
    Volumes cannot be declared in `railway.json`; `deploy.requiredMountPath` only refuses deploys if `/data` is missing.
+
+   Typical layout on the volume:
+
+   ```
+   /data
+     db/goku.sqlite
+     public/goku-lists-latest.apk
+   ```
+
 5. Set service **variables** (secrets stay in Railway, not in git):
 
 | Variable | Example / notes |
 | --- | --- |
 | `FRONTEND_URL` | Public HTTPS URL (e.g. `https://list.goku.tools`; used for CORS and app links) |
 | `BETTER_AUTH_URL` | Better Auth base URL (production: `https://list.goku.tools`) |
-| `DB_FILE_NAME` | `/data/goku.sqlite` (must live on the volume) |
+| `DB_FILE_NAME` | `/data/db/goku.sqlite` (must live on the volume) |
+| `PUBLIC_DIR` | `/data/public` (APK uploads via `POST /release`) |
 | `BETTER_AUTH_SECRET` | 32+ char secret (`openssl rand -base64 32`); keep stable across redeploys |
 | `AUTH_GOOGLE_ID` | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 | `DEV_MODE` | `false` |
 | `NGROK_DOMAIN` | Empty string in production if unused |
 | `ANDROID_SHA256_CERT_FINGERPRINT` | Optional; production signing cert for App Links |
-| `ANDROID_APK_DOWNLOAD_URL` | GitHub (or other) URL for latest Android APK shown on `GET /` |
+| `APK_UPLOAD_SECRET` | Bearer token for `POST /release` (`openssl rand -base64 32`) |
 
 `PORT` is set by Railway. After the volume is attached, `RAILWAY_VOLUME_MOUNT_PATH` is also injected (should be `/data`).
 
@@ -49,7 +59,8 @@ cd /path/to/goku-lists
 railway link --project <name>
 railway link --project artistic-benevolence --service goku-lists
 railway volume add --mount-path /data
-railway variable set DB_FILE_NAME=/data/goku.sqlite --service goku-lists
+railway variable set DB_FILE_NAME=/data/db/goku.sqlite --service goku-lists
+railway variable set PUBLIC_DIR=/data/public --service goku-lists
 railway up --service goku-lists --detach -m "deploy api"
 ```
 

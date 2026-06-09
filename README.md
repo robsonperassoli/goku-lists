@@ -32,13 +32,16 @@ Create env files in each package (see `.gitignore` for ignored names). The API v
 | `FRONTEND_URL` | Public API base URL (CORS, app links; your ngrok HTTPS URL in dev) |
 | `BETTER_AUTH_URL` | Better Auth base URL (defaults to `FRONTEND_URL` if unset) |
 | `NGROK_DOMAIN` | Reserved ngrok domain (without `https://`) |
-| `DB_FILE_NAME` | SQLite file path (e.g. `goku.sqlite`) |
+| `DB_FILE_NAME` | SQLite file path (e.g. `./data/db/goku.sqlite` locally, `/data/db/goku.sqlite` on Railway) |
+| `PUBLIC_DIR` | Static files directory (e.g. `./data/public` locally, `/data/public` on Railway) |
 | `BETTER_AUTH_SECRET` | Session signing secret (32+ characters; generate with `openssl rand -base64 32`) |
 | `AUTH_GOOGLE_ID` | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 | `DEV_MODE` | Set to `true` for Expo dev deep links |
 | `ANDROID_SHA256_CERT_FINGERPRINT` | SHA-256 signing cert fingerprint for Android App Links (see below) |
-| `ANDROID_APK_DOWNLOAD_URL` | HTTPS URL for latest Android APK (`GET /` download page) |
+| `APK_UPLOAD_SECRET` | Bearer token for `POST /release` (32+ characters; generate with `openssl rand -base64 32`) |
+
+Android APKs are uploaded to `{PUBLIC_DIR}` and served at `https://<your-domain>/public/goku-lists-latest.apk`.
 
 **`mobile/.env`**
 
@@ -158,16 +161,23 @@ fingerprint for those builds.
 
 ## Production Android release
 
-From `mobile/` (Android SDK installed, [`gh`](https://cli.github.com/) logged in):
+From `mobile/` (Android SDK installed):
 
 1. Create `mobile/.env.production` with `EXPO_PUBLIC_API_URL` set to your production API (e.g. `https://list.goku.tools`).
-2. `bun run prebuild` — after `app.json` changes, or the first time (generates `android/`).
-3. `bun run android:release` — builds `android/app/build/outputs/apk/release/app-release.apk`.
-4. `bun run android:publish` — uploads the APK to the GitHub release tagged `latest`.
+2. Create `mobile/.env.release` for uploading the APK (separate from Expo):
+
+   ```
+   GOKU_RELEASE_API_URL=https://list.goku.tools
+   GOKU_RELEASE_UPLOAD_SECRET=…
+   ```
+
+3. `bun run prebuild` — after `app.json` changes, or the first time (generates `android/`).
+4. `bun run android:release` — builds `android/app/build/outputs/apk/release/app-release.apk`.
+5. `bun run android:publish` — uploads the APK using `.env.release`.
 
    Build and publish in one step: `bun run android:publish -- --build`.
 
-Set `ANDROID_APK_DOWNLOAD_URL` and `ANDROID_SHA256_CERT_FINGERPRINT` on the production API (see [Railway](#railway-api) / env table above).
+Set `ANDROID_SHA256_CERT_FINGERPRINT` on the production API (see [Railway](#railway-api) / env table above). The download page at `GET /` links to `/public/goku-lists-latest.apk`.
 
 ## Railway (API)
 
@@ -204,7 +214,7 @@ Production API deploy uses Railpack, SQLite on a volume at `/data`, and [`railwa
 | `bun run web` | Expo dev server, open web |
 | `bun run prebuild` | Generate `android/` from Expo config |
 | `bun run android:release` | Build release APK (no install) |
-| `bun run android:publish` | Upload APK to GitHub release `latest` |
+| `bun run android:publish` | Upload APK to production API |
 | `bun run lint` | ESLint via Expo |
 
 Mobile uses Bun for scripts (`bun run lint`, etc.). Database migrations run at app startup via `src/db/migrate.ts`.
