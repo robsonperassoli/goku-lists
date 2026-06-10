@@ -43,11 +43,14 @@ Create env files in each package (see `.gitignore` for ignored names). The API v
 
 Android APKs are uploaded to `{PUBLIC_DIR}` and served at `https://<your-domain>/public/goku-lists-latest.apk`.
 
-**`mobile/.env`**
+**`mobile/.env.*.local`**
 
-| Variable | Purpose |
-| --- | --- |
-| `EXPO_PUBLIC_API_URL` | Same HTTPS URL as `FRONTEND_URL` (ngrok in dev) |
+| File | Variable | Purpose |
+| --- | --- | --- |
+| `.env.development.local` | `EXPO_PUBLIC_API_URL` | Dev API URL (ngrok); loaded by `expo start` only |
+| `.env.production.local` | `EXPO_PUBLIC_API_URL` | Production API URL; loaded by release builds only |
+
+Do not put `EXPO_PUBLIC_API_URL` in `.env.local` — that file loads in every environment and overrides production.
 
 ## Running locally
 
@@ -163,19 +166,12 @@ fingerprint for those builds.
 
 From `mobile/` (Android SDK installed):
 
-1. Create `mobile/.env.production` with `EXPO_PUBLIC_API_URL` set to your production API (e.g. `https://list.goku.tools`).
-2. Create `mobile/.env.release` for uploading the APK (separate from Expo):
+1. Create `mobile/.env.production.local` with `EXPO_PUBLIC_API_URL=https://list.goku.tools` (see env table above).
+2. `bun run prebuild` — after `app.json` changes, or the first time (generates `android/`).
+3. `bun run android:release` — builds `android/app/build/outputs/apk/release/app-release.apk`.
+4. Set `GOKU_RELEASE_API_URL` and `GOKU_RELEASE_UPLOAD_SECRET` in your shell, then `bun run android:publish` — uploads the APK.
 
-   ```
-   GOKU_RELEASE_API_URL=https://list.goku.tools
-   GOKU_RELEASE_UPLOAD_SECRET=…
-   ```
-
-3. `bun run prebuild` — after `app.json` changes, or the first time (generates `android/`).
-4. `bun run android:release` — builds `android/app/build/outputs/apk/release/app-release.apk`.
-5. `bun run android:publish` — uploads the APK using `.env.release`.
-
-   **413 Payload Too Large:** `list.goku.tools` is proxied through Cloudflare, which rejects POST bodies over **100 MiB** (Free/Pro). Release builds target **arm64-only** with compressed native libs to stay under that limit. If publish still fails, set `GOKU_RELEASE_API_URL` in `.env.release` to a **DNS-only** hostname (grey cloud in Cloudflare) that points at your Railway service, e.g. `https://upload.list.goku.tools` → Railway public URL.
+   **413 Payload Too Large:** `list.goku.tools` is proxied through Cloudflare, which rejects POST bodies over **100 MiB** (Free/Pro). Release builds target **arm64-only** with compressed native libs to stay under that limit. If publish still fails, set `GOKU_RELEASE_API_URL` to a **DNS-only** hostname (grey cloud in Cloudflare) that points at your Railway service, e.g. `https://upload.list.goku.tools` → Railway public URL.
 
    Build and publish in one step: `bun run android:publish -- --build`.
 

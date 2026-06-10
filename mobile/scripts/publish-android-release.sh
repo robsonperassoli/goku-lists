@@ -4,47 +4,37 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-RELEASE_ENV="$ROOT/.env.release"
 APK_REL="android/app/build/outputs/apk/release/app-release.apk"
 APK="$ROOT/$APK_REL"
 BUILD=false
+BUILD_ONLY=false
 # Cloudflare Free/Pro caps proxied POST bodies at 100 MiB.
 CLOUDFLARE_UPLOAD_LIMIT_BYTES=$((100 * 1024 * 1024))
 
-read_release_env() {
-  local key="$1"
-  if [[ ! -f "$RELEASE_ENV" ]]; then
-    return 1
+require_env() {
+  local name="$1"
+  if [[ -z "${!name:-}" ]]; then
+    echo "Set ${name} in the environment." >&2
+    exit 1
   fi
+}
 
-  local line
-  line="$(grep -E "^${key}=" "$RELEASE_ENV" | head -1 || true)"
-  if [[ -z "$line" ]]; then
-    return 1
-  fi
-
-  local value="${line#*=}"
-  value="${value#"${value%%[![:space:]]*}"}"
-  value="${value%"${value##*[![:space:]]}"}"
-  value="${value#\"}"
-  value="${value%\"}"
-  value="${value#\'}"
-  value="${value%\'}"
-
-  printf '%s' "$value"
+build_release_apk() {
+  echo "Building release APK (NODE_ENV=production, uses .env.production.local)..."
+  NODE_ENV=production sh -c \
+    'cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a'
 }
 
 usage() {
-  echo "Usage: $(basename "$0") [--build]"
+  echo "Usage: $(basename "$0") [--build | --build-only]"
   echo ""
   echo "  Upload the release APK to the production API."
-  echo "  --build   Run ./gradlew assembleRelease first (ENV=production)"
+  echo "  --build       Build the APK first if missing, then upload"
+  echo "  --build-only  Build the APK and exit (no upload)"
   echo ""
-  echo "Requires mobile/.env.release with:"
+  echo "Upload requires environment variables:"
   echo "  GOKU_RELEASE_API_URL          API base URL, e.g. https://list.goku.tools"
   echo "  GOKU_RELEASE_UPLOAD_SECRET    Bearer token for POST /release"
-  echo ""
-  echo "Optional shell overrides: GOKU_RELEASE_API_URL, GOKU_RELEASE_UPLOAD_SECRET"
   echo ""
   echo "Cloudflare-proxied domains reject uploads over 100 MiB. If publish returns 413,"
   echo "rebuild with 'bun run android:release' (arm64-only, compressed native libs) or"
@@ -55,6 +45,7 @@ usage() {
 for arg in "$@"; do
   case "$arg" in
     --build) BUILD=true ;;
+    --build-only) BUILD_ONLY=true ;;
     -h | --help) usage 0 ;;
     *)
       echo "Unknown argument: $arg" >&2
@@ -63,20 +54,20 @@ for arg in "$@"; do
   esac
 done
 
-if [[ ! -f "$RELEASE_ENV" ]]; then
-  echo "Missing ${RELEASE_ENV}" >&2
-  echo "Create it with GOKU_RELEASE_API_URL and GOKU_RELEASE_UPLOAD_SECRET." >&2
-  exit 1
-fi
-
 if [[ ! -d "$ROOT/android" ]]; then
   echo "Missing android/. Run from mobile/: bun run prebuild" >&2
   exit 1
 fi
 
+if [[ "$BUILD_ONLY" == true ]]; then
+  build_release_apk
+  echo ""
+  echo "APK: ${APK_REL}"
+  exit 0
+fi
+
 if [[ "$BUILD" == true ]] || [[ ! -f "$APK" ]]; then
-  echo "Building release APK..."
-  ENV=production sh -c 'cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a'
+  build_release_apk
 fi
 
 if [[ ! -f "$APK" ]]; then
@@ -84,19 +75,11 @@ if [[ ! -f "$APK" ]]; then
   exit 1
 fi
 
-UPLOAD_SECRET="${GOKU_RELEASE_UPLOAD_SECRET:-$(read_release_env GOKU_RELEASE_UPLOAD_SECRET || true)}"
-if [[ -z "$UPLOAD_SECRET" ]]; then
-  echo "Set GOKU_RELEASE_UPLOAD_SECRET in ${RELEASE_ENV}" >&2
-  exit 1
-fi
+require_env GOKU_RELEASE_UPLOAD_SECRET
+require_env GOKU_RELEASE_API_URL
 
-API_URL="${GOKU_RELEASE_API_URL:-$(read_release_env GOKU_RELEASE_API_URL || true)}"
-if [[ -z "$API_URL" ]]; then
-  echo "Set GOKU_RELEASE_API_URL in ${RELEASE_ENV}" >&2
-  exit 1
-fi
-
-API_URL="${API_URL%/}"
+UPLOAD_SECRET="$GOKU_RELEASE_UPLOAD_SECRET"
+API_URL="${GOKU_RELEASE_API_URL%/}"
 UPLOAD_URL="${API_URL}/release"
 
 APK_BYTES="$(wc -c < "${APK}" | tr -d ' ')"
