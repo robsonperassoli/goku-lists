@@ -6,7 +6,7 @@
     "start": "bunx expo start",
     "prebuild": "bunx expo prebuild --clean --platform android",
     "android": "bunx expo run:android",
-    "android:release": "ENV=production sh -c 'cd android && ./gradlew assembleRelease' && echo '\\nAPK: android/app/build/outputs/apk/release/app-release.apk'",
+    "android:release": "ENV=production sh -c 'cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a' && echo '\\nAPK: android/app/build/outputs/apk/release/app-release.apk'",
     "android:publish": "bash scripts/publish-android-release.sh",
     "lint": "bunx expo lint"
   },
@@ -53,6 +53,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~56.0.4",
+    "expo-build-properties": "^56.0.17",
     "typescript": "~6.0.3"
   },
   "private": true

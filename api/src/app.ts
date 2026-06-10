@@ -44,6 +44,8 @@ export const app = withRequestLogging(
     staticPlugin({
       assets: config.public.dir,
       prefix: "/public",
+      // Uploaded APKs land after boot; alwaysStatic only indexes files at startup.
+      alwaysStatic: false,
       headers: {
         "Cache-Control": "public, max-age=300",
       },

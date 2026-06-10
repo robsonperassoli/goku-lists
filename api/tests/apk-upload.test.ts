@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test"
 import { mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { staticPlugin } from "@elysiajs/static"
 import { Elysia } from "elysia"
 
 const TEST_SECRET = "test-apk-upload-secret-32-chars!!"
@@ -12,8 +13,10 @@ describe("apk upload", () => {
   let apkUploadRoutes: (app: Elysia) => Elysia
   let config: typeof import("../src/lib/config").config
   let apkFileName: string
+  let previousNodeEnv: string | undefined
 
   beforeAll(async () => {
+    previousNodeEnv = process.env.NODE_ENV
     tempRoot = mkdtempSync(join(tmpdir(), "goku-apk-upload-"))
     publicDir = join(tempRoot, "public")
     Bun.spawnSync(["mkdir", "-p", publicDir])
@@ -36,6 +39,11 @@ describe("apk upload", () => {
   })
 
   afterAll(() => {
+    if (previousNodeEnv === undefined) {
+      delete process.env.NODE_ENV
+    } else {
+      process.env.NODE_ENV = previousNodeEnv
+    }
     rmSync(tempRoot, { recursive: true, force: true })
   })
 
@@ -76,5 +84,37 @@ describe("apk upload", () => {
 
     const saved = await Bun.file(join(config.public.dir, apkFileName)).bytes()
     expect(saved).toEqual(apkBytes)
+  })
+
+  test("serves apk written after startup via static plugin in production", async () => {
+    process.env.NODE_ENV = "production"
+    const apkBytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00])
+
+    const app = new Elysia()
+      .use(
+        await staticPlugin({
+          assets: publicDir,
+          prefix: "/public",
+          alwaysStatic: false,
+        }),
+      )
+      .use(apkUploadRoutes)
+
+    const upload = await app.handle(
+      new Request("http://localhost/release", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${TEST_SECRET}`,
+        },
+        body: apkBytes,
+      }),
+    )
+    expect(upload.status).toBe(200)
+
+    const download = await app.handle(
+      new Request(`http://localhost/public/${apkFileName}`),
+    )
+    expect(download.status).toBe(200)
+    expect(new Uint8Array(await download.arrayBuffer())).toEqual(apkBytes)
   })
 })

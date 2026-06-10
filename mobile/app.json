@@ -46,6 +46,15 @@
     },
     "plugins": [
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": ["arm64-v8a"],
+            "useLegacyPackaging": true
+          }
+        }
+      ],
+      [
         "expo-router",
         {
           "origin": "https://list.goku.tools"

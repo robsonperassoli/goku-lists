@@ -175,6 +175,8 @@ From `mobile/` (Android SDK installed):
 4. `bun run android:release` — builds `android/app/build/outputs/apk/release/app-release.apk`.
 5. `bun run android:publish` — uploads the APK using `.env.release`.
 
+   **413 Payload Too Large:** `list.goku.tools` is proxied through Cloudflare, which rejects POST bodies over **100 MiB** (Free/Pro). Release builds target **arm64-only** with compressed native libs to stay under that limit. If publish still fails, set `GOKU_RELEASE_API_URL` in `.env.release` to a **DNS-only** hostname (grey cloud in Cloudflare) that points at your Railway service, e.g. `https://upload.list.goku.tools` → Railway public URL.
+
    Build and publish in one step: `bun run android:publish -- --build`.
 
 Set `ANDROID_SHA256_CERT_FINGERPRINT` on the production API (see [Railway](#railway-api) / env table above). The download page at `GET /` links to `/public/goku-lists-latest.apk`.
