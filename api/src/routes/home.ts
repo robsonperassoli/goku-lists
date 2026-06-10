@@ -1,5 +1,5 @@
 import type { App } from "../app"
-import { config } from "../lib/config"
+import { getApkDownloadUrl } from "../lib/apk"
 
 function downloadPage(apkUrl: string): string {
   return `<!DOCTYPE html>
@@ -17,5 +17,5 @@ function downloadPage(apkUrl: string): string {
 export default (app: App) =>
   app.get("/", ({ set }) => {
     set.headers["content-type"] = "text/html; charset=utf-8"
-    return downloadPage(config.android.apkDownloadUrl)
+    return downloadPage(getApkDownloadUrl())
   })

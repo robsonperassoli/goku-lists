@@ -77,10 +77,10 @@ describe("apk upload", () => {
 
     expect(response.status).toBe(200)
     const body = await response.json()
-    expect(body).toEqual({
-      ok: true,
-      url: "https://list.goku.tools/public/goku-lists-latest.apk",
-    })
+    expect(body.ok).toBe(true)
+    expect(body.url).toMatch(
+      /^https:\/\/list\.goku\.tools\/public\/goku-lists-latest\.apk\?v=\d+$/,
+    )
 
     const saved = await Bun.file(join(config.public.dir, apkFileName)).bytes()
     expect(saved).toEqual(apkBytes)

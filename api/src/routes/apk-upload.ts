@@ -1,5 +1,6 @@
 import { join } from "node:path"
 import type { App } from "../app"
+import { getApkDownloadUrl } from "../lib/apk"
 import { APK_FILE_NAME, config } from "../lib/config"
 
 function isAuthorized(authorization: string | null): boolean {
@@ -26,6 +27,6 @@ export default (app: App) =>
 
     return {
       ok: true,
-      url: config.android.apkDownloadUrl,
+      url: getApkDownloadUrl(),
     }
   })
