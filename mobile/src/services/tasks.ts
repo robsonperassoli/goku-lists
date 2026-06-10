@@ -1,7 +1,19 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, eq, isNull } from "drizzle-orm";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
 import { enqueue, runInSyncTransaction } from "@/db/sync-queue";
 import { task, type CreateTaskArgs, type UpdateTaskArgs } from "@/db/schema";
+
+export function getIncompleteTaskCounts(db: ExpoSQLiteDatabase) {
+  return db
+    .select({
+      listId: task.listId,
+      count: count(),
+    })
+    .from(task)
+    .where(and(isNull(task.deletedAt), isNull(task.completedAt)))
+    .groupBy(task.listId)
+    .all();
+}
 
 export function getTasks(db: ExpoSQLiteDatabase, listId: string) {
   return db

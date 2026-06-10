@@ -3,6 +3,15 @@ import { useDrizzle } from "./useDrizzle";
 import * as Tasks from "../services/tasks";
 import type { CreateTaskArgs, UpdateTaskArgs } from "../db/schema";
 
+export function useIncompleteTaskCounts() {
+  const db = useDrizzle();
+
+  return useQuery({
+    queryKey: ["taskCounts"],
+    queryFn: () => Tasks.getIncompleteTaskCounts(db),
+  });
+}
+
 export function useTasks(listId: string) {
   const db = useDrizzle();
 
@@ -31,6 +40,7 @@ export function useCreateTask() {
     mutationFn: (data: CreateTaskArgs) => Tasks.createTask(db, data),
     onSettled: (_data, _err, { listId }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks", listId] });
+      queryClient.invalidateQueries({ queryKey: ["taskCounts"] });
     },
   });
 }
@@ -44,6 +54,7 @@ export function useUpdateTask() {
     onSettled: (_data, _err, vars) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task", vars.id] });
+      queryClient.invalidateQueries({ queryKey: ["taskCounts"] });
     },
   });
 }
@@ -56,6 +67,7 @@ export function useDeleteTask() {
     mutationFn: ({ id, listId }: { id: string; listId: string }) => Tasks.deleteTask(db, id),
     onSettled: (_data, _err, { listId }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks", listId] });
+      queryClient.invalidateQueries({ queryKey: ["taskCounts"] });
     },
   });
 }
