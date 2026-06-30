@@ -17,10 +17,7 @@ export type CreatedInvitation = {
 };
 
 export function getInvitationState(
-  preview: Pick<
-    InvitationPreview,
-    "expiresAt" | "acceptedAt" | "revokedAt"
-  >,
+  preview: Pick<InvitationPreview, "expiresAt" | "acceptedAt" | "revokedAt">,
   now = Date.now(),
 ): "pending" | "accepted" | "expired" | "revoked" {
   if (preview.revokedAt) {
@@ -78,7 +75,9 @@ export async function getInvitationPreview(
   return (await response.json()) as InvitationPreview;
 }
 
-export async function acceptInvitation(token: string): Promise<{ listId: string }> {
+export async function acceptInvitation(
+  token: string,
+): Promise<{ listId: string }> {
   const response = await apiFetch(`/invitations/${token}/accept`, {
     method: "POST",
   });
@@ -98,7 +97,9 @@ export async function leaveList(listId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new ApiTransportError(`Leave list failed with status ${response.status}`);
+    throw new ApiTransportError(
+      `Leave list failed with status ${response.status}`,
+    );
   }
 }
 

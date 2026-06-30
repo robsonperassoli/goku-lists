@@ -1,5 +1,12 @@
 import { useState, type RefObject } from "react";
-import { Alert, Platform, Pressable, Share, StyleSheet, View } from "react-native";
+import {
+  Alert,
+  Platform,
+  Pressable,
+  Share,
+  StyleSheet,
+  View,
+} from "react-native";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 import { ThemedText } from "@/components/themed-text";
@@ -41,7 +48,8 @@ export function ListOptionsSheet({
   const isContributor = role === "contributor";
 
   const handleShare = async () => {
-    if (!(await isOnline())) {
+    const online = await isOnline();
+    if (!online) {
       Alert.alert(
         "You're offline",
         "Connect to the internet to create an invitation link.",
