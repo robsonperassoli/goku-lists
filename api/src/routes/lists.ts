@@ -14,9 +14,9 @@ const listIdParamSchema = z.object({
 })
 
 export const listRoutes = new Hono<{ Variables: AuthVariables }>()
-  .use("*", requireAuth)
   .post(
     "/lists/:listId/invitations",
+    requireAuth,
     zValidator("param", listIdParamSchema),
     (c) => {
       const { listId } = c.req.valid("param")
@@ -37,6 +37,7 @@ export const listRoutes = new Hono<{ Variables: AuthVariables }>()
   )
   .delete(
     "/lists/:listId/members/me",
+    requireAuth,
     zValidator("param", listIdParamSchema),
     (c) => {
       const { listId } = c.req.valid("param")
