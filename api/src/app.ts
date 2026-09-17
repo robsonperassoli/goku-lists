@@ -29,6 +29,8 @@ const betterAuth = new Elysia({ name: "better-auth" })
 
 export const app = withRequestLogging(
   new Elysia({
+    // exact-mirror cannot compile TypeBox unions used by POST /sync.
+    normalize: "typebox",
     serve: {
       maxRequestBodySize: MAX_APK_UPLOAD_BYTES,
     },

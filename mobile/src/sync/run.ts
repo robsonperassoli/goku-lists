@@ -12,33 +12,40 @@ export type SyncDeps = {
   userId?: string;
 };
 
+export type RunOnceResult = "completed" | "skipped" | "blocked";
+
 let deps: SyncDeps | null = null;
 
 export function initSyncRun(syncRunDeps: SyncDeps | null) {
   deps = syncRunDeps;
 }
 
-export async function runOnce(): Promise<void> {
+export async function runOnce(): Promise<RunOnceResult> {
   if (!deps) {
-    return;
+    return "skipped";
   }
 
   if (!(await isOnline())) {
-    return;
+    return "blocked";
   }
 
-  if (!hasAuthSession()) {
-    return;
+  if (!(await hasAuthSession())) {
+    return "blocked";
   }
 
   try {
-    await pushChanges(deps.db);
+    const pushResult = await pushChanges(deps.db);
+    if (pushResult.status === "transport_failed") {
+      return "blocked";
+    }
+
     await pullChanges(deps.db, deps.queryClient, {
       currentUserId: deps.userId,
     });
+    return "completed";
   } catch (error) {
     if (error instanceof ApiAuthError || error instanceof ApiTransportError) {
-      return;
+      return "blocked";
     }
 
     throw error;
@@ -58,7 +65,7 @@ export async function resyncFull(): Promise<void> {
     return;
   }
 
-  if (!hasAuthSession()) {
+  if (!(await hasAuthSession())) {
     return;
   }
 

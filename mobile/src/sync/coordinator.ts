@@ -18,7 +18,10 @@ async function runLoop() {
         return;
       }
 
-      await runOnce();
+      const result = await runOnce();
+      if (result === "blocked") {
+        return;
+      }
     } while (pending || (activeDeps ? shouldRunAgain(activeDeps.db) : false));
   } finally {
     running = false;

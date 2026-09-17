@@ -15,20 +15,23 @@ export class ApiTransportError extends Error {
   }
 }
 
-function getAuthCookie(): string | null {
-  const cookie = authClient.getCookie();
-  return cookie || null;
+async function getAuthCookie(): Promise<string | null> {
+  const cookie = await authClient.getCookie();
+  if (typeof cookie !== "string" || cookie.length === 0) {
+    return null;
+  }
+  return cookie;
 }
 
-export function hasAuthSession(): boolean {
-  return getAuthCookie() != null;
+export async function hasAuthSession(): Promise<boolean> {
+  return (await getAuthCookie()) != null;
 }
 
 export async function apiFetch(
   path: string,
   init: RequestInit = {},
 ): Promise<Response> {
-  const cookie = getAuthCookie();
+  const cookie = await getAuthCookie();
   if (!cookie || !config.apiUrl) {
     throw new ApiAuthError();
   }
