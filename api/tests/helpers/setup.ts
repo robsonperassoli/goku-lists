@@ -1,8 +1,10 @@
-import { Database } from "bun:sqlite"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import { drizzle } from "drizzle-orm/bun-sqlite"
-import { migrate } from "drizzle-orm/bun-sqlite/migrator"
+
+import Database from "better-sqlite3"
+import { drizzle } from "drizzle-orm/better-sqlite3"
+import { migrate } from "drizzle-orm/better-sqlite3/migrator"
+
 import * as schema from "../../src/db/schema"
 import { msToDate } from "../../src/lib/dates"
 

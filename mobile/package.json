@@ -2,23 +2,29 @@
   "name": "mobile",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
-    "start": "bunx expo start",
-    "prebuild": "bunx expo prebuild --clean --platform android",
-    "android": "bunx expo run:android",
+    "start": "expo start",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "prebuild": "expo prebuild --clean --platform android",
+    "android": "expo run:android",
     "android:release": "bash scripts/publish-android-release.sh --build-only",
     "android:publish": "bash scripts/publish-android-release.sh",
-    "lint": "bunx expo lint"
+    "lint": "expo lint"
   },
   "dependencies": {
-    "@better-auth/expo": "^1.6.15",
+    "@better-auth/expo": "1.7.5",
     "@gorhom/bottom-sheet": "^5.2.9",
     "@react-navigation/bottom-tabs": "^7.15.5",
     "@react-navigation/drawer": "^7.9.8",
     "@react-navigation/elements": "^2.9.10",
     "@react-navigation/native": "^7.1.33",
     "@tanstack/react-query": "^5.99.0",
-    "better-auth": "^1.5.6",
+    "better-auth": "1.7.5",
     "drizzle-orm": "^0.45.2",
     "expo": "^56",
     "expo-constants": "~56.0.16",
@@ -56,6 +62,12 @@
     "eslint-config-expo": "~56.0.4",
     "expo-build-properties": "^56.0.17",
     "typescript": "~6.0.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "unrs-resolver"
+    ]
   },
   "private": true
 }

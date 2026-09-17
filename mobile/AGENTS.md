@@ -1,6 +1,8 @@
-use bun and bunx to run commands in this project.
+use pnpm to run commands in this project.
 
-use `bun run lint` to check to linting errors
+use `pnpm lint` to check for linting errors
+
+Android builds need `ANDROID_HOME`. Mise sets it to `~/Android/Sdk` when you work in this directory ([mise.toml](./mise.toml)). Install the SDK with Android Studio if that path does not exist.
 
 ## Sync queue
 

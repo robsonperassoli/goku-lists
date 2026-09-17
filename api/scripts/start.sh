@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-bun run db:migrate
-exec bun src/index.ts
+pnpm run db:migrate
+exec ./node_modules/.bin/tsx src/index.ts

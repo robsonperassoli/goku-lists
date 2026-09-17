@@ -1,5 +1,6 @@
-import { Database } from "bun:sqlite"
-import { drizzle } from "drizzle-orm/bun-sqlite"
+import Database from "better-sqlite3"
+import { drizzle } from "drizzle-orm/better-sqlite3"
+
 import { config } from "../lib/config"
 import * as schema from "./schema"
 

@@ -1,4 +1,6 @@
+import { writeFile } from "node:fs/promises"
 import { join } from "node:path"
+
 import type { App } from "../app"
 import { getApkDownloadUrl } from "../lib/apk"
 import { APK_FILE_NAME, config } from "../lib/config"
@@ -23,7 +25,7 @@ export default (app: App) =>
     }
 
     const apkPath = join(config.public.dir, APK_FILE_NAME)
-    await Bun.write(apkPath, body)
+    await writeFile(apkPath, Buffer.from(body))
 
     return {
       ok: true,

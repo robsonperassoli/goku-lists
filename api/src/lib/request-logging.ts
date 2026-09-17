@@ -1,4 +1,5 @@
 import type { Elysia } from "elysia"
+
 import { logger } from "./logger"
 
 function pathFromRequest(request: Request) {
@@ -33,7 +34,7 @@ export const withRequestLogging = <const Base extends Elysia>(app: Base) =>
 
       const method = requestMethod ?? "UNKNOWN"
       const path = requestPath ?? "UNKNOWN"
-      const detail = error instanceof Error ? error.message : String(error)
+      const detail = error instanceof Error ? error.message : "unknown error"
 
       logger.error(`${method} ${path} ${String(code)}: ${detail}`, error)
     })

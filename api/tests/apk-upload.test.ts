@@ -1,9 +1,10 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test"
-import { mkdtempSync, rmSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+
 import { staticPlugin } from "@elysiajs/static"
 import { Elysia } from "elysia"
+import { afterAll, beforeAll, describe, expect, test } from "vitest"
 
 const TEST_SECRET = "test-apk-upload-secret-32-chars!!"
 
@@ -19,7 +20,7 @@ describe("apk upload", () => {
     previousNodeEnv = process.env.NODE_ENV
     tempRoot = mkdtempSync(join(tmpdir(), "goku-apk-upload-"))
     publicDir = join(tempRoot, "public")
-    Bun.spawnSync(["mkdir", "-p", publicDir])
+    mkdirSync(publicDir, { recursive: true })
 
     process.env.DB_FILE_NAME = join(tempRoot, "db", "goku.sqlite")
     process.env.PUBLIC_DIR = publicDir
@@ -76,13 +77,15 @@ describe("apk upload", () => {
     )
 
     expect(response.status).toBe(200)
-    const body = await response.json()
+    const body = (await response.json()) as { ok: boolean; url: string }
     expect(body.ok).toBe(true)
     expect(body.url).toMatch(
       /^https:\/\/list\.goku\.tools\/public\/goku-lists-latest\.apk\?v=\d+$/,
     )
 
-    const saved = await Bun.file(join(config.public.dir, apkFileName)).bytes()
+    const saved = new Uint8Array(
+      readFileSync(join(config.public.dir, apkFileName)),
+    )
     expect(saved).toEqual(apkBytes)
   })
 

@@ -1,4 +1,5 @@
 import { defineConfig } from "drizzle-kit"
+
 import { config } from "./src/lib/config"
 
 export const migrationsFolder = "./drizzle"

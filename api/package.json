@@ -1,40 +1,56 @@
 {
   "name": "api",
   "version": "1.0.50",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
-    "start": "bun run src/index.ts",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint --write .",
-    "format": "biome format .",
-    "format:write": "biome format --write .",
-    "check": "biome check .",
-    "check:fix": "biome check --write .",
-    "typecheck": "bunx tsc --noEmit --ignoreDeprecations 6.0",
-    "test": "bun test",
-    "db:generate": "bunx --bun drizzle-kit generate",
-    "db:migrate": "bun run src/db/migrate.ts",
-    "db:push": "bunx --bun drizzle-kit push",
-    "db:studio": "bunx --bun drizzle-kit studio",
-    "ngrok": "bun run ngrok.ts"
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "lint": "oxlint --type-aware",
+    "lint:fix": "oxlint --type-aware --fix",
+    "format": "oxfmt --check",
+    "format:write": "oxfmt",
+    "check": "oxfmt --check && oxlint --type-aware",
+    "check:fix": "oxlint --type-aware --fix && oxfmt",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "ngrok": "tsx ngrok.ts"
   },
   "dependencies": {
-    "@better-auth/expo": "^1.5.6",
+    "@better-auth/expo": "1.7.5",
     "@elysiajs/cors": "^1.4.1",
+    "@elysiajs/node": "^1.4.5",
     "@elysiajs/static": "^1.4.10",
     "@js-temporal/polyfill": "^0.5.1",
     "@sinclair/typebox": "^0.34.49",
-    "better-auth": "^1.5.6",
-    "bun": "^1.3.11",
+    "better-auth": "1.7.5",
+    "better-sqlite3": "^12.8.0",
     "drizzle-orm": "^0.45.2",
-    "elysia": "latest"
+    "elysia": "^1.4.28"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.10",
-    "@types/bun": "^1.3.11",
-    "better-sqlite3": "^12.8.0",
-    "bun-types": "latest",
-    "drizzle-kit": "^0.31.10"
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.10.0",
+    "drizzle-kit": "^0.31.10",
+    "oxfmt": "^0.68.0",
+    "oxlint": "^1.83.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "tsx": "^4.20.0",
+    "typescript": "^7.0.2",
+    "vitest": "^3.2.0"
   },
-  "module": "src/index.js"
+  "engines": {
+    "node": ">=22.18"
+  },
+  "packageManager": "pnpm@10.34.5",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  }
 }

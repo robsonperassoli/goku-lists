@@ -1,12 +1,17 @@
+import { spawn } from "node:child_process"
+
 import { config } from "./src/lib/config"
 
-const proc = Bun.spawn(
-  ["ngrok", "http", `${config.server.port}`, "--domain", config.ngrokDomain],
+const proc = spawn(
+  "ngrok",
+  ["http", `${config.server.port}`, "--domain", config.ngrokDomain],
   {
-    stdout: "inherit",
-    stderr: "inherit",
+    stdio: "inherit",
   },
 )
 
-await proc.exited
-console.log("ngrok exited with code:", proc.exitCode)
+const code = await new Promise<number | null>((resolve) => {
+  proc.on("exit", (exitCode) => resolve(exitCode))
+})
+
+console.log("ngrok exited with code:", code)

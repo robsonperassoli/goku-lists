@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
+
 import { createInvitation } from "../src/invitations"
 import { pushSync } from "../src/sync"
 import { createTestDb, USER_ID } from "./helpers/setup"

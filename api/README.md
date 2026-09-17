@@ -1,20 +1,18 @@
-# Elysia with Bun runtime
+# Goku Lists API
 
-## Getting Started
-To get started with this template, simply paste this command into your terminal:
+Elysia server on Node. See the [repo README](../README.md) for setup, environment variables, and commands.
+
+Copy [`.env.example`](./.env.example) to `.env.local` and fill in secrets. Mise loads `.env.local` when you work in this directory.
+
 ```bash
-bun create elysia ./elysia-example
+pnpm install
+pnpm dev
 ```
 
-## Development
-To start the development server run:
+Open http://localhost:3000/ to confirm the server is running.
+
+Tunnel with ngrok (port must match `PORT`, default 3000):
+
 ```bash
-bun run dev
-```
-
-Open http://localhost:3000/ with your browser to see the result.
-
-## Open server to web
-```
-ngrok http 3000 --domain factual-worm-mostly.ngrok-free.app
+pnpm ngrok
 ```

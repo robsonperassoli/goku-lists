@@ -1,6 +1,6 @@
 # Railway deployment (API)
 
-The API deploys from this monorepo with [Config as Code](https://docs.railway.com/config-as-code) in [`railway.json`](./railway.json) (Railpack builder, Bun start, SQLite on a volume).
+The API deploys from this monorepo with [Config as Code](https://docs.railway.com/config-as-code) in [`railway.json`](./railway.json) (Railpack builder, Node start, SQLite on a volume).
 
 Settings in `railway.json` override the Railway dashboard on each deploy. The dashboard is **not** updated automatically when you change the file.
 
@@ -56,14 +56,14 @@ Settings in `railway.json` override the Railway dashboard on each deploy. The da
 
 SQLite lives on the `/data` volume (`DB_FILE_NAME=/data/db/goku.sqlite`). Railway [mounts volumes only when the service container starts](https://docs.railway.com/guides/volumes), not during [pre-deploy](https://docs.railway.com/guides/pre-deploy-command). A `preDeployCommand` cannot read or write the database file, so migrations must run in the start command.
 
-[`api/scripts/start.sh`](./api/scripts/start.sh) runs migrations, then `exec`s into Bun so the server process is PID 1 and receives SIGTERM directly (needed for graceful shutdown in a later step):
+[`api/scripts/start.sh`](./api/scripts/start.sh) runs migrations, then `exec`s into the Node process so the server is PID 1 and receives SIGTERM directly (needed for graceful shutdown in a later step):
 
 ```bash
-bun run db:migrate
-exec bun src/index.ts
+pnpm run db:migrate
+exec ./node_modules/.bin/tsx src/index.ts
 ```
 
-Using `bun run db:migrate && bun run start` in one shell line kept migrate and the server in the same command but left a shell as PID 1, which can swallow shutdown signals.
+Using `pnpm db:migrate && pnpm start` in one shell line kept migrate and the server in the same command but left a shell as PID 1, which can swallow shutdown signals.
 
 ## CLI shortcuts
 

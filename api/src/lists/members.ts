@@ -1,8 +1,6 @@
 import type { db } from "../db"
 import { canAccessList, isListOwner } from "./access"
-import * as listRepo from "./list-repository"
 import * as memberRepo from "./member-repository"
-import * as taskRepo from "./task-repository"
 import type { ListMember, ListsError, ListsResult } from "./types"
 
 type Db = typeof db

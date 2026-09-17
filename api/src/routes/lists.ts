@@ -1,4 +1,5 @@
 import { t } from "elysia"
+
 import type { App } from "../app"
 import { db } from "../db"
 import { createInvitation } from "../invitations"

@@ -1,12 +1,12 @@
 # Goku Lists
 
-A collaborative lists and tasks app. The repo has two packages: a Bun/Elysia API with auth and sync, and an Expo mobile client with on-device SQLite.
+A collaborative lists and tasks app. The repo has two packages: a Node/Elysia API with auth and sync, and an Expo mobile client with on-device SQLite.
 
 ## Projects
 
 ### `api/`
 
-Backend server built with [Elysia](https://elysiajs.com) on Bun. It handles Google sign-in ([Better Auth](https://www.better-auth.com)), persists lists and tasks in SQLite via [Drizzle](https://orm.drizzle.team), and exposes sync endpoints for the mobile app.
+Backend server built with [Elysia](https://elysiajs.com) on Node. It handles Google sign-in ([Better Auth](https://www.better-auth.com)), persists lists and tasks in SQLite via [Drizzle](https://orm.drizzle.team), and exposes sync endpoints for the mobile app.
 
 ### `mobile/`
 
@@ -16,15 +16,24 @@ Local list/task changes are recorded in a sync queue; see [`mobile/SYNC.md`](mob
 
 ## Prerequisites
 
-- [Bun](https://bun.sh)
+- [mise](https://mise.jdx.dev/) (installs the Node, pnpm, and Java versions in [`mise.toml`](./mise.toml))
 - [ngrok](https://ngrok.com) (required for OAuth and for the phone/simulator to reach your local API)
+- Android SDK at `~/Android/Sdk` (Android Studio default). [`mobile/mise.toml`](mobile/mise.toml) sets `ANDROID_HOME` when you work in `mobile/`
 - Expo tooling (installed via the mobile app’s dependencies)
+
+From the repo root:
+
+```bash
+mise install
+```
 
 ## Environment
 
 Create env files in each package (see `.gitignore` for ignored names). The API validates all variables at startup.
 
-**`api/.env`**
+**API:** copy [`api/.env.example`](api/.env.example) to `api/.env.local` and fill in secrets. [Mise](https://mise.jdx.dev/) loads that file when you work in `api/` ([`api/mise.toml`](api/mise.toml)). Node and pnpm versions stay in the root [`mise.toml`](mise.toml). Railway uses service variables instead of this file.
+
+**`api/.env.local`**
 
 | Variable | Purpose |
 | --- | --- |
@@ -56,11 +65,11 @@ Do not put `EXPO_PUBLIC_API_URL` in `.env.local` — that file loads in every en
 
 From the repo root, work in each package with `cd api` or `cd mobile`.
 
-1. Install dependencies in both packages: `bun install`
-2. Migrate the API database: `bun run db:migrate` (in `api/`)
-3. Start the API: `bun run dev` (in `api/`)
+1. Install dependencies in both packages: `pnpm install`
+2. Migrate the API database: `pnpm db:migrate` (in `api/`)
+3. Start the API: `pnpm dev` (in `api/`)
 4. Expose the API with ngrok (see below)
-5. Point `EXPO_PUBLIC_API_URL` and `FRONTEND_URL` at the ngrok URL, then start the app: `bun run start` (in `mobile/`)
+5. Point `EXPO_PUBLIC_API_URL` and `FRONTEND_URL` at the ngrok URL, then start the app: `pnpm start` (in `mobile/`)
 
 ## ngrok
 
@@ -78,7 +87,7 @@ Replace the domain with yours if different.
 
 ```bash
 cd api
-bun run ngrok
+pnpm ngrok
 ```
 
 Set `FRONTEND_URL` and `EXPO_PUBLIC_API_URL` to `https://<your-ngrok-domain>` while developing.
@@ -89,7 +98,7 @@ Invite links use `https://<your-ngrok-domain>/invitations/{token}`. The app clai
 those URLs via `intentFilters` in `mobile/app.json`; the API serves
 `/.well-known/assetlinks.json` for domain verification.
 
-The fingerprint in `api/.env` must match the certificate that **signed the APK
+The fingerprint in `api/.env.local` must match the certificate that **signed the APK
 on the device**. If `ANDROID_SHA256_CERT_FINGERPRINT` is missing or wrong,
 `assetlinks.json` has an empty `sha256_cert_fingerprints` array and invite links
 hit a browser redirect instead of opening the app directly.
@@ -123,7 +132,7 @@ hit a browser redirect instead of opening the app directly.
    cd mobile/android && ./gradlew signingReport
    ```
 
-3. Copy the fingerprint (colons OK) into `api/.env`:
+3. Copy the fingerprint (colons OK) into `api/.env.local`:
 
    ```bash
    ANDROID_SHA256_CERT_FINGERPRINT=FA:C6:17:45:...
@@ -167,13 +176,13 @@ fingerprint for those builds.
 From `mobile/` (Android SDK installed):
 
 1. Create `mobile/.env.production.local` with `EXPO_PUBLIC_API_URL=https://list.goku.tools` (see env table above).
-2. `bun run prebuild` — after `app.json` changes, or the first time (generates `android/`).
-3. `bun run android:release` — builds `android/app/build/outputs/apk/release/app-release.apk`.
-4. Set `GOKU_RELEASE_API_URL` and `GOKU_RELEASE_UPLOAD_SECRET` in your shell, then `bun run android:publish` — uploads the APK.
+2. `pnpm prebuild` — after `app.json` changes, or the first time (generates `android/`).
+3. `pnpm android:release` — builds `android/app/build/outputs/apk/release/app-release.apk`.
+4. Set `GOKU_RELEASE_API_URL` and `GOKU_RELEASE_UPLOAD_SECRET` in your shell, then `pnpm android:publish` — uploads the APK.
 
    **413 Payload Too Large:** `list.goku.tools` is proxied through Cloudflare, which rejects POST bodies over **100 MiB** (Free/Pro). Release builds target **arm64-only** with compressed native libs to stay under that limit. If publish still fails, set `GOKU_RELEASE_API_URL` to a **DNS-only** hostname (grey cloud in Cloudflare) that points at your Railway service, e.g. `https://upload.list.goku.tools` → Railway public URL.
 
-   Build and publish in one step: `bun run android:publish -- --build`.
+   Build and publish in one step: `pnpm android:publish -- --build`.
 
 Set `ANDROID_SHA256_CERT_FINGERPRINT` on the production API (see [Railway](#railway-api) / env table above). The download page at `GET /` links to `/public/goku-lists-latest.apk`.
 
@@ -187,32 +196,33 @@ Production API deploy uses Railpack, SQLite on a volume at `/data`, and [`railwa
 
 | Command | Description |
 | --- | --- |
-| `bun run dev` | Start dev server with watch |
-| `bun run start` | Start server once |
-| `bun run ngrok` | Tunnel local API through ngrok |
-| `bun run db:migrate` | Apply Drizzle migrations |
-| `bun run db:generate` | Generate migrations from schema |
-| `bun run db:push` | Push schema to database |
-| `bun run db:studio` | Open Drizzle Studio |
-| `bun run lint` | Lint with Biome |
-| `bun run lint:fix` | Lint and fix |
-| `bun run format` | Check formatting |
-| `bun run format:write` | Format files |
-| `bun run check` | Lint + format check |
-| `bun run check:fix` | Lint + format with fixes |
-| `bun run typecheck` | TypeScript check |
+| `pnpm dev` | Start dev server with watch |
+| `pnpm start` | Start server once |
+| `pnpm ngrok` | Tunnel local API through ngrok |
+| `pnpm db:migrate` | Apply Drizzle migrations |
+| `pnpm db:generate` | Generate migrations from schema |
+| `pnpm db:push` | Push schema to database |
+| `pnpm db:studio` | Open Drizzle Studio |
+| `pnpm lint` | Lint with oxlint |
+| `pnpm lint:fix` | Lint and fix |
+| `pnpm format` | Check formatting with oxfmt |
+| `pnpm format:write` | Format files |
+| `pnpm check` | Format check + lint |
+| `pnpm check:fix` | Lint + format with fixes |
+| `pnpm typecheck` | TypeScript 7 check |
+| `pnpm test` | Run Vitest |
 
 ### Mobile (`cd mobile`)
 
 | Command | Description |
 | --- | --- |
-| `bun run start` | Start Expo dev server |
-| `bun run ios` | Expo dev server, open iOS |
-| `bun run android` | Expo dev server, open Android |
-| `bun run web` | Expo dev server, open web |
-| `bun run prebuild` | Generate `android/` from Expo config |
-| `bun run android:release` | Build release APK (no install) |
-| `bun run android:publish` | Upload APK to production API |
-| `bun run lint` | ESLint via Expo |
+| `pnpm start` | Start Expo dev server |
+| `pnpm ios` | Expo dev server, open iOS |
+| `pnpm android` | Expo native Android run |
+| `pnpm web` | Expo dev server, open web |
+| `pnpm prebuild` | Generate `android/` from Expo config |
+| `pnpm android:release` | Build release APK (no install) |
+| `pnpm android:publish` | Upload APK to production API |
+| `pnpm lint` | ESLint via Expo |
 
-Mobile uses Bun for scripts (`bun run lint`, etc.). Database migrations run at app startup via `src/db/migrate.ts`.
+Mobile uses pnpm for scripts (`pnpm lint`, etc.). Database migrations run at app startup via `src/db/migrate.ts`.

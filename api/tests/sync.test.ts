@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, test } from "vitest"
+
 import { addListMember } from "../src/lists/members"
 import { pullSync, pushSync } from "../src/sync"
 import { createTestDb, OTHER_USER_ID, USER_ID } from "./helpers/setup"

@@ -45,6 +45,8 @@ Drop explore tab, unused starter components and assets, and simplify splash bran
 
 Package-specific rules live in each subfolder when needed:
 
-- **mobile/** — [mobile/AGENTS.md](mobile/AGENTS.md) (Bun, lint, sync queue)
-- **api/** — Bun/Elysia; run commands from `api/` with `bun`. Use Temporal (`@js-temporal/polyfill`, helpers in `lib/dates.ts`) for date/time logic—not plain `Date`.
+- **mobile/** — [mobile/AGENTS.md](mobile/AGENTS.md) (pnpm, lint, sync queue)
+- **api/** — Node/Elysia; run commands from `api/` with `pnpm`. Use Temporal (`@js-temporal/polyfill`, helpers in `lib/dates.ts`) for date/time logic—not plain `Date`.
+
+Tool versions (Node, pnpm) are pinned in [mise.toml](mise.toml). Run `mise install` from the repo root. API env vars are loaded from `api/.env.local` via [api/mise.toml](api/mise.toml) (see `api/.env.example`).
 

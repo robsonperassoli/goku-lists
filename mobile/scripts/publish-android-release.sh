@@ -37,7 +37,7 @@ usage() {
   echo "  GOKU_RELEASE_UPLOAD_SECRET    Bearer token for POST /release"
   echo ""
   echo "Cloudflare-proxied domains reject uploads over 100 MiB. If publish returns 413,"
-  echo "rebuild with 'bun run android:release' (arm64-only, compressed native libs) or"
+  echo "rebuild with 'pnpm android:release' (arm64-only, compressed native libs) or"
   echo "point GOKU_RELEASE_API_URL at a DNS-only hostname that reaches Railway directly."
   exit "${1:-0}"
 }
@@ -55,7 +55,7 @@ for arg in "$@"; do
 done
 
 if [[ ! -d "$ROOT/android" ]]; then
-  echo "Missing android/. Run from mobile/: bun run prebuild" >&2
+  echo "Missing android/. Run from mobile/: pnpm prebuild" >&2
   exit 1
 fi
 
@@ -89,7 +89,7 @@ echo "APK size: ${APK_MIB} MiB"
 if [[ "${APK_BYTES}" -gt "${CLOUDFLARE_UPLOAD_LIMIT_BYTES}" ]] \
   && [[ "${UPLOAD_URL}" == *"list.goku.tools"* ]]; then
   echo "Warning: APK exceeds Cloudflare's 100 MiB upload limit for list.goku.tools." >&2
-  echo "Rebuild with 'bun run prebuild && bun run android:release', or upload via a" >&2
+  echo "Rebuild with 'pnpm prebuild && pnpm android:release', or upload via a" >&2
   echo "DNS-only hostname that points at Railway (see README § Production Android release)." >&2
 fi
 
@@ -112,7 +112,7 @@ if [[ "${HTTP_CODE}" == "413" ]]; then
   if grep -qi cloudflare <<< "${RESPONSE}"; then
     echo "Cloudflare rejected the upload before it reached the API (100 MiB limit on Free/Pro)." >&2
   fi
-  echo "Rebuild a smaller APK ('bun run prebuild && bun run android:release') or set" >&2
+  echo "Rebuild a smaller APK ('pnpm prebuild && pnpm android:release') or set" >&2
   echo "GOKU_RELEASE_API_URL to a DNS-only Railway hostname for uploads." >&2
   exit 1
 fi
@@ -124,7 +124,7 @@ if [[ "${HTTP_CODE}" -lt 200 || "${HTTP_CODE}" -ge 300 ]]; then
 fi
 
 echo "$RESPONSE"
-DOWNLOAD_URL="$(echo "$RESPONSE" | bun -e 'const r=JSON.parse(await Bun.stdin.text()); console.log(r.url ?? "")')"
+DOWNLOAD_URL="$(echo "$RESPONSE" | node -e 'const r=JSON.parse(require("fs").readFileSync(0,"utf8")); console.log(r.url ?? "")')"
 if [[ -n "$DOWNLOAD_URL" ]]; then
   echo "Download: ${DOWNLOAD_URL}"
 fi

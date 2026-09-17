@@ -23,7 +23,7 @@ function reject(
 
 function staleReject(
   entity: List | Task,
-  changeUpdatedAt: number,
+  _changeUpdatedAt: number,
 ): ApplySyncResult {
   return {
     ok: false,
