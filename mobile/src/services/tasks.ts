@@ -1,18 +1,51 @@
-import { and, asc, count, eq, isNull } from "drizzle-orm";
+import { and, asc, count, eq, isNotNull, isNull } from "drizzle-orm";
 import type { ExpoSQLiteDatabase } from "drizzle-orm/expo-sqlite/driver";
 import { enqueue, runInSyncTransaction } from "@/db/sync-queue";
 import { task, type CreateTaskArgs, type UpdateTaskArgs } from "@/db/schema";
 
-export function getIncompleteTaskCounts(db: ExpoSQLiteDatabase) {
-  return db
+export type TaskCounts = {
+  listId: string;
+  remaining: number;
+  completed: number;
+};
+
+export function getTaskCounts(db: ExpoSQLiteDatabase): TaskCounts[] {
+  const remainingRows = db
     .select({
       listId: task.listId,
-      count: count(),
+      remaining: count(),
     })
     .from(task)
     .where(and(isNull(task.deletedAt), isNull(task.completedAt)))
     .groupBy(task.listId)
     .all();
+
+  const completedRows = db
+    .select({
+      listId: task.listId,
+      completed: count(),
+    })
+    .from(task)
+    .where(and(isNull(task.deletedAt), isNotNull(task.completedAt)))
+    .groupBy(task.listId)
+    .all();
+
+  const counts = new Map<string, TaskCounts>();
+
+  remainingRows.forEach(({ listId, remaining }) => {
+    counts.set(listId, { listId, remaining, completed: 0 });
+  });
+
+  completedRows.forEach(({ listId, completed }) => {
+    const existing = counts.get(listId);
+    if (existing) {
+      existing.completed = completed;
+    } else {
+      counts.set(listId, { listId, remaining: 0, completed });
+    }
+  });
+
+  return [...counts.values()];
 }
 
 export function getTasks(db: ExpoSQLiteDatabase, listId: string) {

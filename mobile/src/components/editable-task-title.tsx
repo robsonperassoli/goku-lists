@@ -94,9 +94,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   titleText: {
-    fontSize: 16,
+    fontSize: 17,
     lineHeight: 24,
     fontWeight: "500",
+    letterSpacing: -0.2,
   },
   input: {
     minHeight: 24,

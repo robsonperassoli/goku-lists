@@ -102,8 +102,8 @@ export function HomeHeader({ onAddPress, listCount = 0 }: HomeHeaderProps) {
 const styles = StyleSheet.create({
   container: {
     paddingTop: Spacing.two,
-    paddingBottom: Spacing.five,
-    minHeight: 180,
+    paddingBottom: Spacing.four,
+    minHeight: 148,
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',

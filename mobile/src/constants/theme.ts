@@ -2,25 +2,6 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
-export type ListPalette = {
-  colors: readonly [string, string, string];
-  glow: string;
-  accent: string;
-};
-
-export const ListPalettes: readonly ListPalette[] = [
-  { colors: ['#2D1B69', '#7C3AED', '#C084FC'], glow: '#7C3AED', accent: '#E9D5FF' },
-  { colors: ['#1A1A2E', '#16213E', '#0F3460'], glow: '#0F3460', accent: '#BAE6FD' },
-  { colors: ['#3D1C02', '#9A3412', '#FB923C'], glow: '#EA580C', accent: '#FED7AA' },
-  { colors: ['#042F2E', '#0F766E', '#5EEAD4'], glow: '#14B8A6', accent: '#CCFBF1' },
-  { colors: ['#450A0A', '#991B1B', '#FCA5A5'], glow: '#DC2626', accent: '#FECACA' },
-  { colors: ['#1E1B4B', '#4338CA', '#A5B4FC'], glow: '#6366F1', accent: '#C7D2FE' },
-  { colors: ['#14532D', '#166534', '#86EFAC'], glow: '#22C55E', accent: '#DCFCE7' },
-  { colors: ['#500724', '#9D174D', '#F9A8D4'], glow: '#DB2777', accent: '#FCE7F3' },
-  { colors: ['#1C1917', '#44403C', '#A8A29E'], glow: '#78716C', accent: '#E7E5E4' },
-  { colors: ['#172554', '#1E40AF', '#93C5FD'], glow: '#3B82F6', accent: '#DBEAFE' },
-] as const;
-
 export const Colors = {
   light: {
     text: '#000000',
@@ -68,6 +49,9 @@ export const Colors = {
     emptyCtaBackground: 'rgba(0, 0, 0, 0.06)',
     emptyCtaBorder: 'rgba(0, 0, 0, 0.12)',
     emptyCtaText: 'rgba(0, 0, 0, 0.75)',
+
+    groupSurface: '#FFFFFF',
+    groupSeparator: 'rgba(0, 0, 0, 0.06)',
   },
   dark: {
     text: '#ffffff',
@@ -115,6 +99,9 @@ export const Colors = {
     emptyCtaBackground: 'rgba(255, 255, 255, 0.08)',
     emptyCtaBorder: 'rgba(255, 255, 255, 0.14)',
     emptyCtaText: 'rgba(255, 255, 255, 0.75)',
+
+    groupSurface: '#1C1C1E',
+    groupSeparator: 'rgba(255, 255, 255, 0.08)',
   },
 } as const;
 

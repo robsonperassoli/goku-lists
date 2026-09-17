@@ -1,33 +1,39 @@
-import { useState, useRef } from "react";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import type { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { useState, useRef } from 'react';
+import { FlatList, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import * as Crypto from 'expo-crypto';
+import { SymbolView } from 'expo-symbols';
 
-import { ThemedView } from "@/components/themed-view";
-import { ThemedText } from "@/components/themed-text";
-import { TaskItem } from "@/components/task-item";
-import { CreateTaskSheet } from "@/components/create-task-sheet";
-import { ListOptionsSheet } from "@/components/list-options-sheet";
-import { EditableListTitle } from "@/components/editable-list-title";
-import { EmptyState } from "@/components/empty-state";
-import { useTasks, useCreateTask, useUpdateTask } from "@/hooks/tasks";
-import { useList, useDeleteList } from "@/hooks/lists";
+import { TaskItem } from '@/components/task-item';
+import { CreateTaskSheet } from '@/components/create-task-sheet';
+import { ListOptionsSheet } from '@/components/list-options-sheet';
+import { ListScreenHeader } from '@/components/list-screen-header';
+import { TasksEmptyState } from '@/components/tasks-empty-state';
+import { GrainOverlay } from '@/components/grain-overlay';
+import { useTasks, useCreateTask, useUpdateTask } from '@/hooks/tasks';
+import { useList, useDeleteList } from '@/hooks/lists';
 import {
   useCreateInvitation,
   useLeaveList,
   useListMembership,
-} from "@/hooks/sharing";
-import { Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
-import useBottomSheetBackHandler from "@/hooks/use-bottom-sheet-back-handler";
-import * as Crypto from "expo-crypto";
-import { SymbolView } from "expo-symbols";
+} from '@/hooks/sharing';
+import { Fonts, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import useBottomSheetBackHandler from '@/hooks/use-bottom-sheet-back-handler';
+import { getListColor } from '@/lib/list-visuals';
+
+const GROUP_RADIUS = 24;
 
 export default function ListItems() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const listColor = getListColor(id);
 
   const createTaskSheetRef = useRef<BottomSheetModal>(null);
   const listOptionsSheetRef = useRef<BottomSheetModal>(null);
@@ -46,6 +52,7 @@ export default function ListItems() {
 
   const incompleteTasks = tasks?.filter((t) => !t.completedAt) ?? [];
   const completedTasks = tasks?.filter((t) => t.completedAt) ?? [];
+  const isFullyEmpty = incompleteTasks.length === 0 && completedTasks.length === 0;
 
   const handleToggleTask = (task: {
     id: string;
@@ -103,90 +110,116 @@ export default function ListItems() {
   const openCreateTaskSheet = () => createTaskSheetRef.current?.present();
 
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.iconButton}>
-            <SymbolView
-              tintColor={theme.text}
-              name={{
-                ios: "arrow.backward",
-                android: "arrow_back",
-                web: "arrow_back",
-              }}
-              size={24}
-            />
-          </Pressable>
+    <View style={[styles.root, { backgroundColor: theme.homeBackground }]}>
+      <StatusBar barStyle={colorScheme === 'light' ? 'dark-content' : 'light-content'} />
+      <LinearGradient
+        colors={[
+          theme.homeGradientStart,
+          theme.homeGradientMid,
+          theme.homeGradientEnd,
+        ]}
+        locations={[0, 0.5, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+      <GrainOverlay />
 
-          <EditableListTitle list={list} />
-
-          <Pressable onPress={openListOptions} style={styles.iconButton}>
-            <SymbolView
-              tintColor={theme.text}
-              name={{
-                ios: "ellipsis",
-                android: "more_horiz",
-                web: "more_horiz",
-              }}
-              size={24}
-            />
-          </Pressable>
-        </View>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <ListScreenHeader
+          list={list}
+          remainingCount={incompleteTasks.length}
+          hasCompleted={completedTasks.length > 0}
+          onBack={() => router.back()}
+          onMore={openListOptions}
+        />
 
         <FlatList
           data={incompleteTasks}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TaskItem task={item} onToggle={handleToggleTask} />
-          )}
-          ListEmptyComponent={() => (
-            <EmptyState message="No items yet" />
-          )}
-          ListFooterComponent={() => (
-            <Pressable
-              style={({ pressed }) => [
-                styles.addItemRow,
-                pressed && styles.pressed,
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          extraData={showCompleted}
+          renderItem={({ item, index }) => (
+            <View
+              style={[
+                { backgroundColor: theme.groupSurface },
+                index === 0 && styles.groupTop,
               ]}
-              onPress={openCreateTaskSheet}
             >
-              <SymbolView
-                tintColor={theme.textSecondary}
-                name={{
-                  ios: "plus",
-                  android: "add",
-                  web: "add",
-                }}
-                size={20}
+              <TaskItem
+                task={item}
+                onToggle={handleToggleTask}
+                accentColor={listColor}
+                showSeparator
               />
-              <ThemedText type="default" themeColor="textSecondary">
-                Add item
-              </ThemedText>
-            </Pressable>
+            </View>
           )}
+          ListEmptyComponent={
+            completedTasks.length === 0 ? (
+              <TasksEmptyState onAction={openCreateTaskSheet} />
+            ) : null
+          }
+          ListFooterComponent={
+            <>
+              {!isFullyEmpty ? (
+                <View
+                  style={[
+                    { backgroundColor: theme.groupSurface },
+                    incompleteTasks.length === 0
+                      ? styles.groupSolo
+                      : styles.groupBottom,
+                  ]}
+                >
+                  <AddItemRow onPress={openCreateTaskSheet} />
+                </View>
+              ) : null}
+
+              {completedTasks.length > 0 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: showCompleted }}
+                  style={({ pressed }) => [
+                    styles.completedHeader,
+                    pressed && styles.pressedRow,
+                  ]}
+                  onPress={() => setShowCompleted((open) => !open)}
+                >
+                  <SymbolView
+                    tintColor={theme.textLabel}
+                    name={{
+                      ios: showCompleted ? 'chevron.down' : 'chevron.right',
+                      android: showCompleted ? 'expand_more' : 'chevron_right',
+                      web: showCompleted ? 'expand_more' : 'chevron_right',
+                    }}
+                    size={14}
+                  />
+                  <Text style={[styles.completedLabel, { color: theme.textLabel }]}>
+                    {`COMPLETED · ${completedTasks.length}`}
+                  </Text>
+                </Pressable>
+              ) : null}
+
+              {showCompleted && completedTasks.length > 0 ? (
+                <View
+                  style={[
+                    styles.completedGroup,
+                    { backgroundColor: theme.groupSurface },
+                  ]}
+                >
+                  {completedTasks.map((item, index) => (
+                    <TaskItem
+                      key={item.id}
+                      task={item}
+                      onToggle={handleToggleTask}
+                      accentColor={listColor}
+                      showSeparator={index < completedTasks.length - 1}
+                    />
+                  ))}
+                </View>
+              ) : null}
+            </>
+          }
           contentContainerStyle={styles.listContent}
         />
-
-        {completedTasks.length > 0 && (
-          <Pressable
-            style={styles.completedHeader}
-            onPress={() => setShowCompleted(!showCompleted)}
-          >
-            <ThemedText type="default" style={styles.completedTitle}>
-              Completed ({completedTasks.length})
-            </ThemedText>
-          </Pressable>
-        )}
-
-        {showCompleted && (
-          <FlatList
-            data={completedTasks}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TaskItem task={item} onToggle={handleToggleTask} />
-            )}
-          />
-        )}
       </SafeAreaView>
 
       <CreateTaskSheet
@@ -198,7 +231,7 @@ export default function ListItems() {
 
       <ListOptionsSheet
         ref={listOptionsSheetRef}
-        listName={list?.name ?? ""}
+        listName={list?.name ?? ''}
         role={role}
         onDelete={handleDeleteList}
         onLeave={handleLeaveList}
@@ -207,48 +240,110 @@ export default function ListItems() {
         isLeaving={leaveList.isPending}
         isSharing={createInvitation.isPending}
       />
-    </ThemedView>
+    </View>
+  );
+}
+
+function AddItemRow({ onPress }: { onPress: () => void }) {
+  const theme = useTheme();
+
+  return (
+    <Pressable
+      accessibilityLabel="Add item"
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.addItemRow, pressed && styles.pressedRow]}
+      onPress={onPress}
+    >
+      <View style={styles.addIconWrap}>
+        <View
+          style={[styles.addIcon, { backgroundColor: theme.backgroundElement }]}
+        >
+          <SymbolView
+            tintColor={theme.textSecondary}
+            name={{
+              ios: 'plus',
+              android: 'add',
+              web: 'add',
+            }}
+            size={16}
+          />
+        </View>
+      </View>
+      <Text style={[styles.addItemLabel, { color: theme.textSecondary }]}>
+        Add item
+      </Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
   },
   safeArea: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-    gap: Spacing.two,
-  },
-  iconButton: {
-    padding: Spacing.one,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
   listContent: {
     flexGrow: 1,
-    paddingBottom: Spacing.three,
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.six,
+  },
+  groupTop: {
+    borderTopLeftRadius: GROUP_RADIUS,
+    borderTopRightRadius: GROUP_RADIUS,
+    overflow: 'hidden',
+  },
+  groupBottom: {
+    borderBottomLeftRadius: GROUP_RADIUS,
+    borderBottomRightRadius: GROUP_RADIUS,
+    overflow: 'hidden',
+  },
+  groupSolo: {
+    borderRadius: GROUP_RADIUS,
+    overflow: 'hidden',
+  },
+  completedGroup: {
+    borderRadius: GROUP_RADIUS,
+    overflow: 'hidden',
   },
   addItemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: 18,
     paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
+  },
+  addIconWrap: {
+    padding: Spacing.one,
+  },
+  addIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addItemLabel: {
+    fontSize: 17,
+    lineHeight: 24,
+    fontWeight: '500',
+    letterSpacing: -0.2,
   },
   completedHeader: {
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.three,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#ccc",
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.one,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.three,
   },
-  completedTitle: {
-    fontWeight: "bold",
+  completedLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.6,
+    fontFamily: Fonts.mono,
+  },
+  pressedRow: {
+    opacity: 0.7,
   },
 });

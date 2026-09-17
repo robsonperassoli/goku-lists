@@ -3,26 +3,23 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type HomeEmptyStateProps = {
+type TasksEmptyStateProps = {
   onAction: () => void;
 };
 
-export function HomeEmptyState({ onAction }: HomeEmptyStateProps) {
+export function TasksEmptyState({ onAction }: TasksEmptyStateProps) {
   const theme = useTheme();
 
   return (
     <View style={styles.container}>
-      <View style={[styles.card, { backgroundColor: theme.groupSurface }]}>
-        <Text style={[styles.title, { color: theme.emptyGhostTitle }]}>
-          Your first list
-        </Text>
-        <Text style={[styles.hint, { color: theme.emptyGhostHint }]}>
-          Tap + to begin collecting
-        </Text>
-      </View>
-
+      <Text style={[styles.title, { color: theme.emptyGhostTitle }]}>
+        Nothing here yet
+      </Text>
+      <Text style={[styles.hint, { color: theme.emptyGhostHint }]}>
+        Add a first item to get going
+      </Text>
       <Pressable
-        accessibilityLabel="Create a list"
+        accessibilityLabel="Add item"
         accessibilityRole="button"
         onPress={onAction}
         style={({ pressed }) => [
@@ -35,7 +32,7 @@ export function HomeEmptyState({ onAction }: HomeEmptyStateProps) {
         ]}
       >
         <Text style={[styles.ctaText, { color: theme.emptyCtaText }]}>
-          Create a list
+          Add item
         </Text>
       </Pressable>
     </View>
@@ -46,14 +43,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     paddingTop: Spacing.five,
-    paddingBottom: Spacing.six,
-    gap: Spacing.four,
-  },
-  card: {
-    width: '100%',
-    borderRadius: 24,
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.five,
+    paddingBottom: Spacing.five,
     gap: Spacing.two,
   },
   title: {
@@ -64,6 +54,7 @@ const styles = StyleSheet.create({
   hint: {
     fontSize: 14,
     fontWeight: '500',
+    marginBottom: Spacing.three,
   },
   cta: {
     paddingHorizontal: 28,

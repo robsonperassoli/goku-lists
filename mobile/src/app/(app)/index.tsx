@@ -10,7 +10,7 @@ import { HomeEmptyState } from '@/components/home-empty-state';
 import { GrainOverlay } from '@/components/grain-overlay';
 import { CreateListSheet } from '@/components/create-list-sheet';
 import { useLists } from '@/hooks/lists';
-import { useIncompleteTaskCounts } from '@/hooks/tasks';
+import { useTaskCounts } from '@/hooks/tasks';
 import useBottomSheetBackHandler from '@/hooks/use-bottom-sheet-back-handler';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,12 +23,12 @@ export default function HomeScreen() {
   useBottomSheetBackHandler(createListSheetRef);
 
   const { data: lists } = useLists();
-  const { data: taskCounts } = useIncompleteTaskCounts();
+  const { data: taskCounts } = useTaskCounts();
 
-  const countByListId = useMemo(() => {
-    const map = new Map<string, number>();
-    taskCounts?.forEach(({ listId, count }) => {
-      map.set(listId, count);
+  const countsByListId = useMemo(() => {
+    const map = new Map<string, { remaining: number; completed: number }>();
+    taskCounts?.forEach(({ listId, remaining, completed }) => {
+      map.set(listId, { remaining, completed });
     });
     return map;
   }, [taskCounts]);
@@ -55,13 +55,12 @@ export default function HomeScreen() {
         <FlatList
           data={lists}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
+          renderItem={({ item }) => (
             <ListCard
               id={item.id}
               name={item.name}
-              image={item.image}
-              index={index}
-              itemCount={countByListId.get(item.id) ?? 0}
+              remaining={countsByListId.get(item.id)?.remaining ?? 0}
+              completed={countsByListId.get(item.id)?.completed ?? 0}
             />
           )}
           ListHeaderComponent={
@@ -96,5 +95,6 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.six,
   },
 });

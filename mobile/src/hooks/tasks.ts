@@ -3,12 +3,12 @@ import { useDrizzle } from "./useDrizzle";
 import * as Tasks from "../services/tasks";
 import type { CreateTaskArgs, UpdateTaskArgs } from "../db/schema";
 
-export function useIncompleteTaskCounts() {
+export function useTaskCounts() {
   const db = useDrizzle();
 
   return useQuery({
     queryKey: ["taskCounts"],
-    queryFn: () => Tasks.getIncompleteTaskCounts(db),
+    queryFn: () => Tasks.getTaskCounts(db),
   });
 }
 

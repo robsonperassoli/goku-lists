@@ -78,16 +78,17 @@ export function EditableListTitle({ list }: EditableListTitleProps) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    alignSelf: "stretch",
   },
   titleFrame: {
     minHeight: 44,
     justifyContent: "center",
   },
   titleText: {
-    fontSize: 32,
-    lineHeight: 44,
+    fontSize: 36,
+    lineHeight: 42,
     fontWeight: "700",
+    letterSpacing: -1,
   },
   input: {
     minHeight: 44,
