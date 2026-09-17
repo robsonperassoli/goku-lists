@@ -1,12 +1,12 @@
 # Goku Lists
 
-A collaborative lists and tasks app. The repo has two packages: a Node/Elysia API with auth and sync, and an Expo mobile client with on-device SQLite.
+A collaborative lists and tasks app. The repo has two packages: a Node/Hono API with auth and sync, and an Expo mobile client with on-device SQLite.
 
 ## Projects
 
 ### `api/`
 
-Backend server built with [Elysia](https://elysiajs.com) on Node. It handles Google sign-in ([Better Auth](https://www.better-auth.com)), persists lists and tasks in SQLite via [Drizzle](https://orm.drizzle.team), and exposes sync endpoints for the mobile app.
+Backend server built with [Hono](https://hono.dev) and [Zod](https://zod.dev) on Node. It handles Google sign-in ([Better Auth](https://www.better-auth.com)), persists lists and tasks in SQLite via [Drizzle](https://orm.drizzle.team), and exposes sync endpoints for the mobile app.
 
 ### `mobile/`
 

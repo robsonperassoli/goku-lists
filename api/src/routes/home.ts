@@ -1,4 +1,5 @@
-import type { App } from "../app"
+import { Hono } from "hono"
+
 import { getApkDownloadUrl } from "../lib/apk"
 
 function downloadPage(apkUrl: string): string {
@@ -14,8 +15,6 @@ function downloadPage(apkUrl: string): string {
 </html>`
 }
 
-export default (app: App) =>
-  app.get("/", ({ set }) => {
-    set.headers["content-type"] = "text/html; charset=utf-8"
-    return downloadPage(getApkDownloadUrl())
-  })
+export const homeRoutes = new Hono().get("/", (c) => {
+  return c.html(downloadPage(getApkDownloadUrl()))
+})

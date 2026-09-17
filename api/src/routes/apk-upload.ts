@@ -1,34 +1,42 @@
 import { writeFile } from "node:fs/promises"
 import { join } from "node:path"
 
-import type { App } from "../app"
+import { Hono } from "hono"
+import { bodyLimit } from "hono/body-limit"
+
 import { getApkDownloadUrl } from "../lib/apk"
 import { APK_FILE_NAME, config } from "../lib/config"
 
-function isAuthorized(authorization: string | null): boolean {
+const MAX_APK_UPLOAD_BYTES = 512 * 1024 * 1024
+
+function isAuthorized(authorization: string | undefined): boolean {
   if (!authorization?.startsWith("Bearer ")) return false
   const token = authorization.slice("Bearer ".length)
   return token.length > 0 && token === config.apkUpload.secret
 }
 
-export default (app: App) =>
-  app.post("/release", async ({ request, set }) => {
-    if (!isAuthorized(request.headers.get("authorization"))) {
-      set.status = 401
-      return { error: "unauthorized" }
+export const apkUploadRoutes = new Hono().post(
+  "/release",
+  bodyLimit({
+    maxSize: MAX_APK_UPLOAD_BYTES,
+    onError: (c) => c.json({ error: "payload too large" }, 413),
+  }),
+  async (c) => {
+    if (!isAuthorized(c.req.header("authorization"))) {
+      return c.json({ error: "unauthorized" }, 401)
     }
 
-    const body = await request.arrayBuffer()
+    const body = await c.req.arrayBuffer()
     if (body.byteLength === 0) {
-      set.status = 400
-      return { error: "empty body" }
+      return c.json({ error: "empty body" }, 400)
     }
 
     const apkPath = join(config.public.dir, APK_FILE_NAME)
     await writeFile(apkPath, Buffer.from(body))
 
-    return {
+    return c.json({
       ok: true,
       url: getApkDownloadUrl(),
-    }
-  })
+    })
+  },
+)

@@ -1,48 +1,29 @@
-import type { Elysia } from "elysia"
+import type { Context } from "hono"
+import { createMiddleware } from "hono/factory"
+import { HTTPException } from "hono/http-exception"
 
 import { logger } from "./logger"
 
-function pathFromRequest(request: Request) {
-  return new URL(request.url).pathname
-}
+export const requestLogging = createMiddleware(async (c, next) => {
+  const startedAt = performance.now()
+  await next()
+  const durationMs = Math.round(performance.now() - startedAt)
+  logger.http(c.req.method, c.req.path, c.res.status, durationMs)
+})
 
-function statusFromSet(set: { status?: number | string }) {
-  const status = set.status
+export function handleAppError(err: Error, c: Context) {
+  if (err instanceof HTTPException) {
+    if (err.status !== 400 && err.status !== 404) {
+      logger.error(
+        `${c.req.method} ${c.req.path} ${err.status}: ${err.message}`,
+        err,
+      )
+    }
 
-  if (typeof status === "number") {
-    return status
+    return err.getResponse()
   }
 
-  if (typeof status === "string") {
-    return Number.parseInt(status, 10) || 500
-  }
+  logger.error(`${c.req.method} ${c.req.path} ERROR: ${err.message}`, err)
 
-  return 200
+  return c.json({ error: err.message }, 500)
 }
-
-export const withRequestLogging = <const Base extends Elysia>(app: Base) =>
-  app
-    .derive(({ request }) => ({
-      requestStartedAt: performance.now(),
-      requestPath: pathFromRequest(request),
-      requestMethod: request.method,
-    }))
-    .onError(({ code, error, requestMethod, requestPath }) => {
-      if (code === "VALIDATION" || code === "NOT_FOUND") {
-        return
-      }
-
-      const method = requestMethod ?? "UNKNOWN"
-      const path = requestPath ?? "UNKNOWN"
-      const detail = error instanceof Error ? error.message : "unknown error"
-
-      logger.error(`${method} ${path} ${String(code)}: ${detail}`, error)
-    })
-    .onAfterResponse(
-      ({ requestMethod, requestPath, requestStartedAt, set }) => {
-        const durationMs = Math.round(performance.now() - requestStartedAt)
-        const status = statusFromSet(set)
-
-        logger.http(requestMethod, requestPath, status, durationMs)
-      },
-    )

@@ -1,6 +1,7 @@
-import { t } from "elysia"
+import { zValidator } from "@hono/zod-validator"
+import { Hono } from "hono"
+import { z } from "zod"
 
-import type { App } from "../app"
 import { db } from "../db"
 import {
   acceptInvitation,
@@ -12,96 +13,105 @@ import { auth } from "../lib/auth"
 import { config } from "../lib/config"
 import { dateToMs } from "../lib/dates"
 import { logger } from "../lib/logger"
+import { requireAuth, type AuthVariables } from "../middleware/auth"
 import { invitationErrorStatus } from "./errors"
 
-export default (app: App) =>
-  app
-    .get(
-      "/invitations/:token",
-      async ({ params, query, set, request }) => {
-        const session = await auth.api.getSession({ headers: request.headers })
+const tokenParamSchema = z.object({
+  token: z.string(),
+})
 
-        if (session) {
-          const result = getInvitationPreview(db, params.token)
+export const invitationRoutes = new Hono<{ Variables: AuthVariables }>()
+  .get(
+    "/invitations/:token",
+    zValidator("param", tokenParamSchema),
+    zValidator(
+      "query",
+      z.object({
+        fallback: z.literal("1").optional(),
+      }),
+    ),
+    async (c) => {
+      const { token } = c.req.valid("param")
+      const { fallback } = c.req.valid("query")
+      const session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+      })
 
-          if (!result.success) {
-            set.status = invitationErrorStatus(result.error.code)
-            return { error: result.error.code }
-          }
+      if (session) {
+        const result = getInvitationPreview(db, token)
 
-          return {
-            token: result.data.token,
-            listId: result.data.listId,
-            listName: result.data.listName,
-            inviterName: result.data.inviterName,
-            expiresAt: dateToMs(result.data.expiresAt),
-            acceptedAt: dateToMs(result.data.acceptedAt),
-            revokedAt: dateToMs(result.data.revokedAt),
-          }
-        }
-
-        const invitePath = `/invitations/${params.token}`
-        const fallbackUrl = new URL(
-          `${invitePath}?fallback=1`,
-          config.server.frontendUrl,
-        ).toString()
-
-        set.headers["cache-control"] = "no-store"
-
-        if (query.fallback === "1") {
-          logger.info(
-            `Invite app open failed (intent fallback): token=${params.token}`,
+        if (!result.success) {
+          return c.json(
+            { error: result.error.code },
+            invitationErrorStatus(result.error.code),
           )
-          set.status = 302
-          set.headers.location = "/"
-          return ""
         }
 
-        set.status = 302
-        set.headers.location = androidIntentLink(`invite/${params.token}`, {
-          httpsFallback: fallbackUrl,
+        return c.json({
+          token: result.data.token,
+          listId: result.data.listId,
+          listName: result.data.listName,
+          inviterName: result.data.inviterName,
+          expiresAt: dateToMs(result.data.expiresAt),
+          acceptedAt: dateToMs(result.data.acceptedAt),
+          revokedAt: dateToMs(result.data.revokedAt),
         })
+      }
 
-        return ""
-      },
-      {
-        params: t.Object({ token: t.String() }),
-        query: t.Object({
-          fallback: t.Optional(t.Literal("1")),
+      const invitePath = `/invitations/${token}`
+      const fallbackUrl = new URL(
+        `${invitePath}?fallback=1`,
+        config.server.frontendUrl,
+      ).toString()
+
+      c.header("Cache-Control", "no-store")
+
+      if (fallback === "1") {
+        logger.info(`Invite app open failed (intent fallback): token=${token}`)
+        return c.redirect("/", 302)
+      }
+
+      return c.redirect(
+        androidIntentLink(`invite/${token}`, {
+          httpsFallback: fallbackUrl,
         }),
-      },
-    )
-    .post(
-      "/invitations/:token/accept",
-      ({ user, params, set }) => {
-        const result = acceptInvitation(db, user.id, params.token)
+        302,
+      )
+    },
+  )
+  .post(
+    "/invitations/:token/accept",
+    requireAuth,
+    zValidator("param", tokenParamSchema),
+    (c) => {
+      const { token } = c.req.valid("param")
+      const result = acceptInvitation(db, c.get("user").id, token)
 
-        if (!result.success) {
-          set.status = invitationErrorStatus(result.error.code)
-          return { error: result.error.code }
-        }
+      if (!result.success) {
+        return c.json(
+          { error: result.error.code },
+          invitationErrorStatus(result.error.code),
+        )
+      }
 
-        return { listId: result.data.listId }
-      },
-      {
-        auth: true,
-        params: t.Object({ token: t.String() }),
-      },
-    )
-    .delete(
-      "/invitations/:token",
-      ({ user, params, set }) => {
-        const result = revokeInvitation(db, user.id, params.token)
+      return c.json({ listId: result.data.listId })
+    },
+  )
+  .delete(
+    "/invitations/:token",
+    requireAuth,
+    zValidator("param", tokenParamSchema),
+    (c) => {
+      const { token } = c.req.valid("param")
+      const result = revokeInvitation(db, c.get("user").id, token)
 
-        if (!result.success) {
-          set.status = invitationErrorStatus(result.error.code)
-          return { error: result.error.code }
-        }
+      if (!result.success) {
+        return c.json(
+          { error: result.error.code },
+          invitationErrorStatus(result.error.code),
+        )
+      }
 
-        return { token: result.data.token }
-      },
-      {
-        auth: true,
-        params: t.Object({ token: t.String() }),
-      },
-    )
+      return c.json({ token: result.data.token })
+    },
+  )

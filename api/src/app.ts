@@ -1,61 +1,38 @@
-import { cors } from "@elysiajs/cors"
-import { node } from "@elysiajs/node"
-import { staticPlugin } from "@elysiajs/static"
-import { Elysia } from "elysia"
+import { Hono } from "hono"
+import { cors } from "hono/cors"
 
 import { auth } from "./lib/auth"
 import { config } from "./lib/config"
-import { withRequestLogging } from "./lib/request-logging"
+import { servePublicAssets } from "./lib/public-static"
+import { handleAppError, requestLogging } from "./lib/request-logging"
+import { apkUploadRoutes } from "./routes/apk-upload"
+import { homeRoutes } from "./routes/home"
+import { invitationRoutes } from "./routes/invitations"
+import { listRoutes } from "./routes/lists"
+import { meRoutes } from "./routes/me"
+import { syncRoutes } from "./routes/sync"
+import { wellKnownRoutes } from "./routes/well-known"
 
-// Release APK uploads can exceed Elysia's default 128MB body limit.
-const MAX_APK_UPLOAD_BYTES = 512 * 1024 * 1024
-
-const betterAuth = new Elysia({ name: "better-auth" })
-  .mount(auth.handler)
-  .macro({
-    auth: {
-      async resolve({ status, request: { headers } }) {
-        const session = await auth.api.getSession({
-          headers,
-        })
-
-        if (!session) return status(401)
-
-        return {
-          user: session.user,
-          session: session.session,
-        }
-      },
-    },
-  })
-
-export const app = withRequestLogging(
-  new Elysia({
-    adapter: node(),
-    // exact-mirror cannot compile TypeBox unions used by POST /sync.
-    normalize: "typebox",
-    serve: {
-      maxRequestBodySize: MAX_APK_UPLOAD_BYTES,
-    },
-  }),
-)
+const app = new Hono()
+  .use("*", requestLogging)
   .use(
+    "*",
     cors({
       origin: config.server.frontendUrl,
       credentials: true,
     }),
   )
-  .use(
-    staticPlugin({
-      assets: config.public.dir,
-      prefix: "/public",
-      // Uploaded APKs land after boot; alwaysStatic only indexes files at startup.
-      alwaysStatic: false,
-      headers: {
-        "Cache-Control": "public, max-age=300",
-      },
-    }),
-  )
-  .use(betterAuth)
+  .use("/public/*", servePublicAssets(config.public.dir))
+  .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))
+  .route("/", apkUploadRoutes)
+  .route("/", syncRoutes)
+  .route("/", listRoutes)
+  .route("/", invitationRoutes)
+  .route("/", wellKnownRoutes)
+  .route("/", homeRoutes)
+  .route("/", meRoutes)
 
-export type App = typeof app
+app.onError(handleAppError)
+
+export { app }
+export type AppType = typeof app

@@ -1,6 +1,6 @@
 # Goku Lists API
 
-Elysia server on Node. See the [repo README](../README.md) for setup, environment variables, and commands.
+Hono server on Node. See the [repo README](../README.md) for setup, environment variables, and commands.
 
 Copy [`.env.example`](./.env.example) to `.env.local` and fill in secrets. Mise loads `.env.local` when you work in this directory.
 

@@ -1,52 +1,58 @@
-import { t } from "elysia"
+import { zValidator } from "@hono/zod-validator"
+import { Hono } from "hono"
+import { z } from "zod"
 
-import type { App } from "../app"
 import { db } from "../db"
 import { createInvitation } from "../invitations"
 import { dateToMs } from "../lib/dates"
 import { leaveList } from "../lists/members"
+import { requireAuth, type AuthVariables } from "../middleware/auth"
 import { invitationErrorStatus } from "./errors"
 
-export default (app: App) =>
-  app
-    .post(
-      "/lists/:listId/invitations",
-      ({ user, params, set }) => {
-        const result = createInvitation(db, user.id, params.listId)
+const listIdParamSchema = z.object({
+  listId: z.string(),
+})
 
-        if (!result.success) {
-          set.status = invitationErrorStatus(result.error.code)
-          return { error: result.error.code }
-        }
+export const listRoutes = new Hono<{ Variables: AuthVariables }>()
+  .use("*", requireAuth)
+  .post(
+    "/lists/:listId/invitations",
+    zValidator("param", listIdParamSchema),
+    (c) => {
+      const { listId } = c.req.valid("param")
+      const result = createInvitation(db, c.get("user").id, listId)
 
-        return {
-          token: result.data.token,
-          expiresAt: dateToMs(result.data.expiresAt),
-        }
-      },
-      {
-        auth: true,
-        params: t.Object({ listId: t.String() }),
-      },
-    )
-    .delete(
-      "/lists/:listId/members/me",
-      ({ user, params, set }) => {
-        const now = new Date()
-        const result = leaveList(db, user.id, params.listId, {
-          updatedAt: now,
-          deletedAt: now,
-        })
+      if (!result.success) {
+        return c.json(
+          { error: result.error.code },
+          invitationErrorStatus(result.error.code),
+        )
+      }
 
-        if (!result.success) {
-          set.status = invitationErrorStatus(result.error.code)
-          return { error: result.error.code }
-        }
+      return c.json({
+        token: result.data.token,
+        expiresAt: dateToMs(result.data.expiresAt),
+      })
+    },
+  )
+  .delete(
+    "/lists/:listId/members/me",
+    zValidator("param", listIdParamSchema),
+    (c) => {
+      const { listId } = c.req.valid("param")
+      const now = new Date()
+      const result = leaveList(db, c.get("user").id, listId, {
+        updatedAt: now,
+        deletedAt: now,
+      })
 
-        return { listId: params.listId }
-      },
-      {
-        auth: true,
-        params: t.Object({ listId: t.String() }),
-      },
-    )
+      if (!result.success) {
+        return c.json(
+          { error: result.error.code },
+          invitationErrorStatus(result.error.code),
+        )
+      }
+
+      return c.json({ listId })
+    },
+  )

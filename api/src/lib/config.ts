@@ -1,42 +1,41 @@
 import { mkdirSync } from "node:fs"
 import { dirname } from "node:path"
 
-import { type Static, Type } from "@sinclair/typebox"
-import { Value } from "@sinclair/typebox/value"
+import { z } from "zod"
 
 export const APK_FILE_NAME = "goku-lists-latest.apk"
 
-export const ConfigSchema = Type.Object({
-  server: Type.Object({
-    frontendUrl: Type.String({ minLength: 1 }),
-    port: Type.Integer({ minimum: 1, maximum: 65535 }),
+export const ConfigSchema = z.object({
+  server: z.object({
+    frontendUrl: z.string().min(1),
+    port: z.number().int().min(1).max(65535),
   }),
-  db: Type.Object({
-    fileName: Type.String({ minLength: 1 }),
+  db: z.object({
+    fileName: z.string().min(1),
   }),
-  public: Type.Object({
-    dir: Type.String({ minLength: 1 }),
+  public: z.object({
+    dir: z.string().min(1),
   }),
-  auth: Type.Object({
-    url: Type.String({ minLength: 1 }),
-    secret: Type.String({ minLength: 32 }),
-    google: Type.Object({
-      clientId: Type.String({ minLength: 1 }),
-      clientSecret: Type.String({ minLength: 1 }),
+  auth: z.object({
+    url: z.string().min(1),
+    secret: z.string().min(32),
+    google: z.object({
+      clientId: z.string().min(1),
+      clientSecret: z.string().min(1),
     }),
   }),
-  devMode: Type.Boolean(),
-  ngrokDomain: Type.String(),
-  apkUpload: Type.Object({
-    secret: Type.String({ minLength: 32 }),
+  devMode: z.boolean(),
+  ngrokDomain: z.string(),
+  apkUpload: z.object({
+    secret: z.string().min(32),
   }),
-  android: Type.Object({
-    sha256CertFingerprint: Type.Optional(Type.String()),
-    apkDownloadUrl: Type.String({ minLength: 1 }),
+  android: z.object({
+    sha256CertFingerprint: z.string().optional(),
+    apkDownloadUrl: z.string().min(1),
   }),
 })
 
-export type Config = Static<typeof ConfigSchema>
+export type Config = z.infer<typeof ConfigSchema>
 
 const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "")
 
@@ -72,15 +71,17 @@ const rawConfig = {
   },
 }
 
-if (!Value.Check(ConfigSchema, rawConfig)) {
-  const details = [...Value.Errors(ConfigSchema, rawConfig)]
-    .map(({ path, message }) => `${path || "/"}: ${message}`)
+const parsed = ConfigSchema.safeParse(rawConfig)
+
+if (!parsed.success) {
+  const details = parsed.error.issues
+    .map(({ path, message }) => `${path.join(".") || "/"}: ${message}`)
     .join("\n")
 
   throw new Error(`Invalid environment configuration:\n${details}`)
 }
 
-mkdirSync(dirname(rawConfig.db.fileName), { recursive: true })
-mkdirSync(rawConfig.public.dir, { recursive: true })
+mkdirSync(dirname(parsed.data.db.fileName), { recursive: true })
+mkdirSync(parsed.data.public.dir, { recursive: true })
 
-export const config: Config = rawConfig
+export const config: Config = parsed.data

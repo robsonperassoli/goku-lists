@@ -1,4 +1,5 @@
-import type { App } from "../app"
+import { Hono } from "hono"
+
 import { ANDROID_PACKAGE } from "../lib/app-link"
 import { config } from "../lib/config"
 
@@ -22,8 +23,7 @@ function assetLinks() {
   ]
 }
 
-export default (app: App) =>
-  app.get("/.well-known/assetlinks.json", ({ set }) => {
-    set.headers["content-type"] = "application/json"
-    return assetLinks()
-  })
+export const wellKnownRoutes = new Hono().get(
+  "/.well-known/assetlinks.json",
+  (c) => c.json(assetLinks()),
+)
