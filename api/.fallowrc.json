@@ -1,0 +1,16 @@
+{
+  // This file is JSONC: fallow reads these comments; generic JSON tools may not.
+  "$schema": "./node_modules/fallow/schema.json",
+  "entry": ["src/index.ts", "src/db/migrate.ts", "ngrok.ts"],
+  "ignorePatterns": ["drizzle/**"],
+  "duplicates": {
+    // Hide pair-only clones; focus on widespread copy-paste
+    // worth refactoring. Lower to 2 to report every duplicate pair.
+    "minOccurrences": 3,
+    // Shared timestamp columns across Drizzle tables are intentional.
+    "ignore": ["src/db/schema.ts"]
+  },
+  "rules": {
+    "unused-dependencies": "warn"
+  }
+}

@@ -5,7 +5,7 @@ import { z } from "zod"
 
 export const APK_FILE_NAME = "goku-lists-latest.apk"
 
-export const ConfigSchema = z.object({
+const ConfigSchema = z.object({
   server: z.object({
     frontendUrl: z.string().min(1),
     port: z.number().int().min(1).max(65535),

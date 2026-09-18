@@ -47,7 +47,7 @@ const taskChangeSchema = z.union([
   }),
 ])
 
-export const changeSchema = z.union([listChangeSchema, taskChangeSchema])
+const changeSchema = z.union([listChangeSchema, taskChangeSchema])
 
 export const pullSyncQuerySchema = z.object({
   since: z.preprocess(

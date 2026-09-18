@@ -1,9 +1,5 @@
-export const APP_SCHEME = "goku-lists"
+const APP_SCHEME = "goku-lists"
 export const ANDROID_PACKAGE = "com.gokulists.app"
-
-export function appDeepLink(path: string): string {
-  return `${APP_SCHEME}://${path.replace(/^\//, "")}`
-}
 
 export function androidIntentLink(
   path: string,

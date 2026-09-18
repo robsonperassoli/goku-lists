@@ -209,6 +209,11 @@ Production API deploy uses Railpack, SQLite on a volume at `/data`, and [`railwa
 | `pnpm format:write` | Format files |
 | `pnpm check` | Format check + lint |
 | `pnpm check:fix` | Lint + format with fixes |
+| `pnpm analyze` | Graph analysis with Fallow (dead code, duplication, health) |
+| `pnpm analyze:dead-code` | Unused files, exports, and dependencies |
+| `pnpm analyze:dupes` | Duplicated code |
+| `pnpm analyze:health` | Complexity hotspots |
+| `pnpm analyze:audit` | Changed-file analysis |
 | `pnpm typecheck` | TypeScript 7 check |
 | `pnpm test` | Run Vitest |
 

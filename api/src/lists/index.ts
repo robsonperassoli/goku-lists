@@ -294,17 +294,4 @@ export function deleteTask(
   return ok(toTask(taskRepo.findTaskById(db, id)!))
 }
 
-export type {
-  ChangesQuery,
-  DeleteList,
-  DeleteTask,
-  List,
-  ListMember,
-  ListsError,
-  ListsResult,
-  NewList,
-  NewTask,
-  Task,
-  UpdateList,
-  UpdateTask,
-} from "./types"
+export type { List, ListMember, ListsResult, Task } from "./types"

@@ -30,7 +30,7 @@ export function findListById(db: Db, id: string): ListRow | undefined {
   return db.select().from(list).where(eq(list.id, id)).get()
 }
 
-export function findOwnedListById(
+function findOwnedListById(
   db: Db,
   userId: string,
   id: string,

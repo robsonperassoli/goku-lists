@@ -4,7 +4,7 @@ import * as memberRepo from "./member-repository"
 
 type Db = typeof db
 
-export function getActiveMemberRole(
+function getActiveMemberRole(
   db: Db,
   userId: string,
   listId: string,

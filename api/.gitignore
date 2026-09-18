@@ -46,3 +46,4 @@ bun.lock
 
 goku.sqlite
 data/
+.fallow/

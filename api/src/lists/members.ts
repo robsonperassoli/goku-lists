@@ -1,5 +1,4 @@
 import type { db } from "../db"
-import { canAccessList, isListOwner } from "./access"
 import * as memberRepo from "./member-repository"
 import type { ListMember, ListsError, ListsResult } from "./types"
 
@@ -68,42 +67,6 @@ export function addListMember(
   return ok(toMember(memberRepo.findMemberByListAndUser(db, listId, userId)!))
 }
 
-export function removeListMember(
-  db: Db,
-  actorUserId: string,
-  listId: string,
-  targetUserId: string,
-  timestamps: { updatedAt: Date; deletedAt: Date },
-): ListsResult<ListMember> {
-  if (!isListOwner(db, actorUserId, listId)) {
-    return err({ code: "not_owner" })
-  }
-
-  if (actorUserId === targetUserId) {
-    return err({ code: "forbidden" })
-  }
-
-  const existing = memberRepo.findActiveMemberByListAndUser(
-    db,
-    listId,
-    targetUserId,
-  )
-
-  if (!existing) {
-    return err({ code: "not_found" })
-  }
-
-  memberRepo.updateMemberByListAndUser(db, listId, targetUserId, {
-    role: existing.role,
-    updatedAt: timestamps.updatedAt,
-    deletedAt: timestamps.deletedAt,
-  })
-
-  return ok(
-    toMember(memberRepo.findMemberByListAndUser(db, listId, targetUserId)!),
-  )
-}
-
 export function leaveList(
   db: Db,
   userId: string,
@@ -127,12 +90,4 @@ export function leaveList(
   })
 
   return ok(toMember(memberRepo.findMemberByListAndUser(db, listId, userId)!))
-}
-
-export function canUserAccessList(db: Db, userId: string, listId: string) {
-  return canAccessList(db, userId, listId)
-}
-
-export function isUserListOwner(db: Db, userId: string, listId: string) {
-  return isListOwner(db, userId, listId)
 }

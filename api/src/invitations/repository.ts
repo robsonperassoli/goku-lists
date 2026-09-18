@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 
 import type { db } from "../db"
 import { list, listInvitation, user } from "../db/schema"
@@ -39,17 +39,5 @@ export function findInvitationPreviewRow(db: Db, id: string) {
     .innerJoin(list, eq(listInvitation.listId, list.id))
     .innerJoin(user, eq(listInvitation.invitedByUserId, user.id))
     .where(eq(listInvitation.id, id))
-    .get()
-}
-
-export function findActiveInvitationForList(
-  db: Db,
-  listId: string,
-  id: string,
-): InvitationRow | undefined {
-  return db
-    .select()
-    .from(listInvitation)
-    .where(and(eq(listInvitation.id, id), eq(listInvitation.listId, listId)))
     .get()
 }

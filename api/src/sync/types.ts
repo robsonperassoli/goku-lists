@@ -73,10 +73,6 @@ export type PullResponse = {
   changes: SyncChange[]
 }
 
-export type PushRequest = {
-  changes: PushChange[]
-}
-
 export type RejectedChange = {
   id: string
   reason: string
